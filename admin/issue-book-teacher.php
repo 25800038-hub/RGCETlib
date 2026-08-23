@@ -10,32 +10,32 @@ else{
 
 if(isset($_POST['issue']))
 {
-$studentid=strtoupper($_POST['studentid']);
+$teacherid=strtoupper($_POST['teacherid']);
 $bookid=$_POST['bookid']; 
 $aremark=$_POST['aremark']; 
 $isissued=1;
 $aqty=$_POST['aqty'];
 if($aqty>0){
-    // Check student borrowing limits
+    // Check teacher borrowing limits
     $limitSql = "SELECT 
                     (SELECT COUNT(*) FROM tblissuedbookdetails WHERE StudentID = :sid AND (RetrunStatus = '' OR RetrunStatus IS NULL OR RetrunStatus = '0')) AS currentIssued,
                     (SELECT COUNT(*) FROM tblreservations WHERE StudentID = :sid2 AND Status = 'Reserved') AS currentReserved";
     $limitQuery = $dbh->prepare($limitSql);
-    $limitQuery->bindParam(':sid', $studentid, PDO::PARAM_STR);
-    $limitQuery->bindParam(':sid2', $studentid, PDO::PARAM_STR);
+    $limitQuery->bindParam(':sid', $teacherid, PDO::PARAM_STR);
+    $limitQuery->bindParam(':sid2', $teacherid, PDO::PARAM_STR);
     $limitQuery->execute();
     $limitRow = $limitQuery->fetch(PDO::FETCH_OBJ);
     
     $totalHoldings = intval($limitRow->currentIssued) + intval($limitRow->currentReserved);
-    if($totalHoldings >= 3) {
-        $_SESSION['error']="Student has reached the maximum borrowing limit of 3 books (Active: $totalHoldings).";
-        header('location:manage-issued-books.php');
+    if($totalHoldings >= 5) {
+        $_SESSION['error']="Faculty has reached the maximum borrowing limit of 5 books (Active: $totalHoldings).";
+        header('location:manage-issued-books-teacher.php');
         exit();
     }
 
-$sql="INSERT INTO  tblissuedbookdetails(StudentID,BookId,remark) VALUES(:studentid,:bookid,:aremark)";
+$sql="INSERT INTO  tblissuedbookdetails(StudentID,BookId,remark) VALUES(:teacherid,:bookid,:aremark)";
 $query = $dbh->prepare($sql);
-$query->bindParam(':studentid',$studentid,PDO::PARAM_STR);
+$query->bindParam(':teacherid',$teacherid,PDO::PARAM_STR);
 $query->bindParam(':bookid',$bookid,PDO::PARAM_STR);
 $query->bindParam(':aremark',$aremark,PDO::PARAM_STR);
 $query->execute();
@@ -43,15 +43,15 @@ $lastInsertId = $dbh->lastInsertId();
 if($lastInsertId)
 {
 $_SESSION['msg']="Book issued successfully";
-header('location:manage-issued-books.php');
+header('location:manage-issued-books-teacher.php');
 }
 else 
 {
 $_SESSION['error']="Something went wrong. Please try again";
-header('location:manage-issued-books.php');
+header('location:manage-issued-books-teacher.php');
 } } else {
  $_SESSION['error']="Book Not available";
-header('location:manage-issued-books.php');   
+header('location:manage-issued-books-teacher.php');   
 }
 
 }
@@ -73,20 +73,20 @@ header('location:manage-issued-books.php');
     <!-- GOOGLE FONT -->
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css' />
 <script>
-// function for get student name and check borrowing history
+// function for get teacher name and check borrowing history
 function getstudent() {
 $("#loaderIcon").show();
 jQuery.ajax({
-url: "get_student.php",
-data:'studentid='+$("#studentid").val(),
+url: "get_teacher.php",
+data:'teacherid='+$("#teacherid").val(),
 type: "POST",
 success:function(data){
-$("#get_student_name").html(data);
+$("#get_teacher_name").html(data);
 
-// Check student's borrowing history for remarks
+// Check teacher's borrowing history for remarks
 jQuery.ajax({
-url: "check_student_history.php",
-data:'studentid='+$("#studentid").val(),
+url: "check_teacher_history.php",
+data:'teacherid='+$("#teacherid").val(),
 type: "POST",
 success:function(remarks){
 // Auto-fill remarks field
@@ -149,12 +149,12 @@ Issue a New Book
 <form role="form" method="post">
 
 <div class="form-group">
-<label>Student id<span style="color:red;">*</span></label>
-<input class="form-control" type="text" name="studentid" id="studentid" onBlur="getstudent()" autocomplete="off"  required />
+<label>Teacher id<span style="color:red;">*</span></label>
+<input class="form-control" type="text" name="teacherid" id="teacherid" onBlur="getstudent()" autocomplete="off"  required />
 </div>
 
 <div class="form-group">
-<span id="get_student_name" style="font-size:16px;"></span> 
+<span id="get_teacher_name" style="font-size:16px;"></span> 
 </div>
 
 
@@ -170,8 +170,8 @@ Issue a New Book
  </div>
 <div class="form-group">
 <label>Remark<span style="color:red;">*</span></label>
-<textarea class="form-control"  name="aremark" id="aremark" placeholder="Auto-filled based on student history..." required></textarea>
-<small class="text-muted">This field auto-fills based on the student's borrowing history. You can edit it if needed.</small>
+<textarea class="form-control"  name="aremark" id="aremark" placeholder="Auto-filled based on teacher history..." required></textarea>
+<small class="text-muted">This field auto-fills based on the teacher's borrowing history. You can edit it if needed.</small>
 </div>
 
 

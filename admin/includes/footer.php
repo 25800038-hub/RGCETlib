@@ -42,7 +42,7 @@
                         <li><a href="change-password.php"><i class="fa fa-lock"></i> Change Password</a></li>
                         <li><a href="#"><i class="fa fa-question-circle"></i> Library Timings</a></li>
                         <li><a href="#"><i class="fa fa-phone"></i> Contact Support</a></li>
-                        <li><a href="../index.php"><i class="fa fa-home"></i> Student Portal</a></li>
+                        <li><a href="../studentlogin.php"><i class="fa fa-graduation-cap"></i> Student Portal</a></li>
                         <li><a href="logout.php"><i class="fa fa-sign-out"></i> Logout</a></li>
                     </ul>
                 </div>
@@ -75,8 +75,12 @@
    SITE FOOTER — RGCET gray Theme (Admin)
    ============================================================ */
     .site-footer {
-        margin-top: 50px;
+        margin-top: auto;
+        margin-bottom: 0;
+        padding-bottom: 0;
         font-family: 'Inter', 'Open Sans', sans-serif;
+        flex-shrink: 0;
+        width: 100%;
     }
 
     .footer-banner {

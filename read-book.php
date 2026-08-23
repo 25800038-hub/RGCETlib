@@ -3,10 +3,11 @@ session_start();
 error_reporting(0);
 include('includes/config.php');
 
-if (strlen($_SESSION['login']) == 0) {
-    header('location:index.php');
-    exit();
-} else {
+if(strlen($_SESSION['login'])==0 && strlen($_SESSION['tlogin'])==0)
+    {   
+header('location:index.php');
+}
+else{
     $bookid = intval($_GET['id']);
 
     // Fetch Book Details

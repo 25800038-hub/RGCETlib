@@ -16,10 +16,11 @@ else
         $resid = intval($_GET['resid']);
 
         // Fetch reservation details
-        $resSql = "SELECT tblreservations.*, tblbooks.BookName, tblstudents.FullName 
+        $resSql = "SELECT tblreservations.*, tblbooks.BookName, COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName 
                    FROM tblreservations 
                    JOIN tblbooks ON tblbooks.id = tblreservations.BookId
-                   JOIN tblstudents ON tblstudents.StudentId = tblreservations.StudentID
+                   LEFT JOIN tblstudents ON tblstudents.StudentId = tblreservations.StudentID
+                   LEFT JOIN tblteachers ON tblteachers.TeacherId = tblreservations.StudentID
                    WHERE tblreservations.id = :resid";
         $resQuery = $dbh->prepare($resSql);
         $resQuery->bindParam(':resid', $resid, PDO::PARAM_INT);
@@ -69,12 +70,26 @@ else
     if(isset($_GET['action']) && $_GET['action'] == 'cancel' && isset($_GET['resid']))
     {
         $resid = intval($_GET['resid']);
-        $cancelSql = "UPDATE tblreservations SET Status = 'Cancelled', AdminRemark = 'Cancelled by Admin' WHERE id = :resid AND Status = 'Reserved'";
+        
+        // Fetch bookid to promote waitlist
+        $resSql = "SELECT BookId, Status FROM tblreservations WHERE id = :resid";
+        $resQuery = $dbh->prepare($resSql);
+        $resQuery->bindParam(':resid', $resid, PDO::PARAM_INT);
+        $resQuery->execute();
+        $resObj = $resQuery->fetch(PDO::FETCH_OBJ);
+
+        $cancelSql = "UPDATE tblreservations SET Status = 'Cancelled', AdminRemark = 'Cancelled by Admin' WHERE id = :resid AND Status IN ('Reserved', 'Waitlist')";
         $cancelQuery = $dbh->prepare($cancelSql);
         $cancelQuery->bindParam(':resid', $resid, PDO::PARAM_INT);
         $cancelQuery->execute();
 
         $_SESSION['msg'] = "Reservation #" . $resid . " has been cancelled.";
+        
+        if($resObj && $resObj->Status == 'Reserved') {
+            include_once('../includes/promote_waitlist.php');
+            promoteWaitlist($dbh, $resObj->BookId);
+        }
+
         header('location:manage-reservations.php');
         exit();
     }
@@ -108,7 +123,7 @@ else
             <div class="row pad-botm">
                 <div class="col-md-12">
                     <h4 class="header-line">Manage Book Reservations</h4>
-                    <p class="text-muted">Review student reservation requests. When a student arrives at the library counter to collect their reserved book, click <strong>"Issue / Collect"</strong> to immediately issue the book.</p>
+                    <p class="text-muted">Review member reservation requests. When a member arrives at the library counter to collect their reserved book, click <strong>"Issue / Collect"</strong> to immediately issue the book.</p>
                 </div>
             </div>
 
@@ -148,8 +163,8 @@ else
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Student ID</th>
-                                            <th>Student Name</th>
+                                            <th>Member ID</th>
+                                            <th>Member Name</th>
                                             <th>Book Name</th>
                                             <th>ISBN</th>
                                             <th>Reserved On</th>
@@ -165,14 +180,15 @@ else
                                                 tblreservations.ReservationDate,
                                                 tblreservations.Status,
                                                 tblreservations.AdminRemark,
-                                                tblstudents.StudentId,
-                                                tblstudents.FullName,
-                                                tblstudents.MobileNumber,
+                                                tblreservations.StudentID as MemberID,
+                                                COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName,
+                                                COALESCE(tblstudents.MobileNumber, tblteachers.MobileNumber) as MobileNumber,
                                                 tblbooks.BookName,
                                                 tblbooks.ISBNNumber,
                                                 tblbooks.bookImage
                                             FROM tblreservations
-                                            JOIN tblstudents ON tblstudents.StudentId = tblreservations.StudentID
+                                            LEFT JOIN tblstudents ON tblstudents.StudentId = tblreservations.StudentID
+                                            LEFT JOIN tblteachers ON tblteachers.TeacherId = tblreservations.StudentID
                                             JOIN tblbooks ON tblbooks.id = tblreservations.BookId
                                             ORDER BY tblreservations.id DESC";
                                     $query = $dbh->prepare($sql);
@@ -193,29 +209,47 @@ else
                                         <tr class="odd gradeX<?php echo $isOverduePickup ? ' warning' : ''; ?>">
                                             <td class="center"><?php echo htmlentities($cnt);?></td>
                                             <td class="center">
-                                                <strong><?php echo htmlentities($result->StudentId);?></strong>
+                                                <strong><?php echo htmlentities($result->MemberID);?></strong>
                                                 <br /><small class="text-muted"><i class="fa fa-phone"></i> <?php echo htmlentities($result->MobileNumber);?></small>
                                             </td>
-                                            <td><?php echo htmlentities($result->FullName);?></td>
+                                            <td>
+                                                <?php echo htmlentities($result->FullName);?>
+                                                <br>
+                                                <?php if(stripos($result->MemberID, 'TID') === 0): ?>
+                                                    <span class="label label-info">Teacher</span>
+                                                <?php else: ?>
+                                                    <span class="label label-success">Student</span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td>
                                                 <strong><?php echo htmlentities($result->BookName);?></strong>
                                             </td>
                                             <td class="center"><?php echo htmlentities($result->ISBNNumber);?></td>
                                             <td class="center"><?php echo htmlentities(date_format($resDate, 'd-M-Y h:i A'));?></td>
                                             <td class="center">
-                                                <strong><?php echo htmlentities(date_format($deadlineDate, 'd-M-Y'));?></strong>
-                                                <?php if($isOverduePickup) { ?>
-                                                    <br /><span class="label label-danger">Pickup Overdue</span>
+                                                <?php if($result->Status == 'Waitlist') { ?>
+                                                    <strong class="text-muted">Pending (TBD)</strong>
+                                                <?php } else { ?>
+                                                    <strong><?php echo htmlentities(date_format($deadlineDate, 'd-M-Y'));?></strong>
+                                                    <?php if($isOverduePickup) { ?>
+                                                        <br /><span class="label label-danger">Pickup Overdue</span>
+                                                    <?php } ?>
                                                 <?php } ?>
                                             </td>
                                             <td class="center">
                                                 <?php 
                                                 if($result->Status == 'Reserved') {
-                                                    echo '<span class="label label-warning"><i class="fa fa-clock-o"></i> Reserved (Pending Pickup)</span>';
+                                                    if($isOverduePickup) {
+                                                        echo '<span class="label label-danger">Expired Pickup</span>';
+                                                    } else {
+                                                        echo '<span class="label label-warning">Reserved</span>';
+                                                    }
+                                                } elseif($result->Status == 'Waitlist') {
+                                                    echo '<span class="label label-info">Waitlist</span>';
                                                 } elseif($result->Status == 'Collected') {
-                                                    echo '<span class="label label-success"><i class="fa fa-check"></i> Collected & Issued</span>';
+                                                    echo '<span class="label label-success">Issued</span>';
                                                 } elseif($result->Status == 'Cancelled') {
-                                                    echo '<span class="label label-danger"><i class="fa fa-times"></i> Cancelled</span>';
+                                                    echo '<span class="label label-danger">Cancelled</span>';
                                                 } else {
                                                     echo '<span class="label label-default">' . htmlentities($result->Status) . '</span>';
                                                 }

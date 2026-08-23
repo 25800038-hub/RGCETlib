@@ -31,7 +31,7 @@ include_once('../includes/promote_waitlist.php');
 promoteWaitlist($dbh, $bookid);
 
 $_SESSION['msg']="Book Returned successfully";
-header('location:manage-issued-books.php');
+header('location:manage-issued-books-teacher.php');
 
 
 
@@ -117,7 +117,7 @@ Issued Book Details
 <form role="form" method="post">
 <?php 
 $rid=intval($_GET['rid']);
-$sql = "SELECT tblstudents.StudentId ,tblstudents.FullName,tblstudents.EmailId,tblstudents.MobileNumber,tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid,tblissuedbookdetails.fine,tblissuedbookdetails.RetrunStatus,tblbooks.id as bid,tblbooks.bookImage from  tblissuedbookdetails join tblstudents on tblstudents.StudentId=tblissuedbookdetails.StudentId join tblbooks on tblbooks.id=tblissuedbookdetails.BookId where tblissuedbookdetails.id=:rid";
+$sql = "SELECT tblteachers.TeacherId ,tblteachers.FullName,tblteachers.EmailId,tblteachers.MobileNumber,tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid,tblissuedbookdetails.fine,tblissuedbookdetails.RetrunStatus,tblbooks.id as bid,tblbooks.bookImage from  tblissuedbookdetails join tblteachers on tblteachers.TeacherId=tblissuedbookdetails.StudentID join tblbooks on tblbooks.id=tblissuedbookdetails.BookId where tblissuedbookdetails.id=:rid";
 $query = $dbh -> prepare($sql);
 $query->bindParam(':rid',$rid,PDO::PARAM_STR);
 $query->execute();
@@ -131,29 +131,29 @@ foreach($results as $result)
 
 
 <input type="hidden" name="bookid" value="<?php echo htmlentities($result->bid);?>">
-<h4>Student Details</h4>
+<h4>Teacher Details</h4>
 <hr />
 <div class="col-md-6"> 
 <div class="form-group">
-<label>Student ID :</label>
-<?php echo htmlentities($result->StudentId);?>
+<label>Teacher ID :</label>
+<?php echo htmlentities($result->TeacherId);?>
 </div></div>
 
 <div class="col-md-6"> 
 <div class="form-group">
-<label>Student Name :</label>
+<label>Teacher Name :</label>
 <?php echo htmlentities($result->FullName);?>
 </div></div>
 
 <div class="col-md-6"> 
 <div class="form-group">
-<label>Student Email Id :</label>
+<label>Teacher Email Id :</label>
 <?php echo htmlentities($result->EmailId);?>
 </div></div>
 
 <div class="col-md-6"> 
 <div class="form-group">
-<label>Student Contact No :</label>
+<label>Teacher Contact No :</label>
 <?php echo htmlentities($result->MobileNumber);?>
 </div></div>
 

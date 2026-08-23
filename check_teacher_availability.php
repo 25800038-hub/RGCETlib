@@ -8,7 +8,7 @@ if(!empty($_POST["emailid"])) {
 		echo "error : You did not enter a valid email.";
 	}
 	else {
-		$sql ="SELECT EmailId FROM tblstudents WHERE EmailId=:email UNION SELECT EmailId FROM tblteachers WHERE EmailId=:email";
+		$sql ="SELECT EmailId FROM tblteachers WHERE EmailId=:email UNION SELECT EmailId FROM tblstudents WHERE EmailId=:email";
 $query= $dbh -> prepare($sql);
 $query-> bindParam(':email', $email, PDO::PARAM_STR);
 $query-> execute();

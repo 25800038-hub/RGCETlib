@@ -3,29 +3,27 @@ session_start();
 error_reporting(0);
 include('includes/config.php');
 
-if(strlen($_SESSION['login'])==0)
-{   
-    header('location:index.php');
-    exit();
+if(strlen($_SESSION['login'])==0 && strlen($_SESSION['tlogin'])==0)
+    {   
+header('location:index.php');
 }
-else
-{ 
-    $sid = $_SESSION['stdid'];
+else{
+$sid=isset($_SESSION['stdid']) ? $_SESSION['stdid'] : $_SESSION['teacherid'];
 
     // Handle Reservation Cancellation by Student
     if(isset($_GET['action']) && $_GET['action'] == 'cancel' && isset($_GET['resid']))
     {
         $resid = intval($_GET['resid']);
         
-        // Verify this reservation belongs to the logged-in student and is currently 'Reserved'
-        $checkSql = "SELECT id, Status FROM tblreservations WHERE id = :resid AND StudentID = :sid";
+        // Verify this reservation belongs to the logged-in student and is currently 'Reserved' or 'Waitlist'
+        $checkSql = "SELECT id, BookId, Status FROM tblreservations WHERE id = :resid AND StudentID = :sid";
         $checkQuery = $dbh->prepare($checkSql);
         $checkQuery->bindParam(':resid', $resid, PDO::PARAM_INT);
         $checkQuery->bindParam(':sid', $sid, PDO::PARAM_STR);
         $checkQuery->execute();
         $resObj = $checkQuery->fetch(PDO::FETCH_OBJ);
 
-        if($resObj && $resObj->Status == 'Reserved')
+        if($resObj && ($resObj->Status == 'Reserved' || $resObj->Status == 'Waitlist'))
         {
             $cancelSql = "UPDATE tblreservations SET Status = 'Cancelled' WHERE id = :resid";
             $cancelQuery = $dbh->prepare($cancelSql);
@@ -33,6 +31,12 @@ else
             $cancelQuery->execute();
 
             $_SESSION['msg'] = "Reservation cancelled successfully.";
+
+            // If a reserved book was cancelled, promote the next person on the waitlist
+            if($resObj->Status == 'Reserved') {
+                include_once('includes/promote_waitlist.php');
+                promoteWaitlist($dbh, $resObj->BookId);
+            }
         }
         else
         {
@@ -170,9 +174,13 @@ else
                                             <td class="center"><?php echo htmlentities($result->ISBNNumber);?></td>
                                             <td class="center"><?php echo htmlentities(date_format($resDate, 'd-M-Y h:i A'));?></td>
                                             <td class="center">
-                                                <strong><?php echo htmlentities(date_format($deadlineDate, 'd-M-Y'));?></strong>
-                                                <?php if($result->Status == 'Reserved') { ?>
-                                                    <br /><small class="text-info">(Within 3 days)</small>
+                                                <?php if($result->Status == 'Waitlist') { ?>
+                                                    <strong class="text-muted">Pending (TBD)</strong>
+                                                <?php } else { ?>
+                                                    <strong><?php echo htmlentities(date_format($deadlineDate, 'd-M-Y'));?></strong>
+                                                    <?php if($result->Status == 'Reserved') { ?>
+                                                        <br /><small class="text-info">(Within 3 days)</small>
+                                                    <?php } ?>
                                                 <?php } ?>
                                             </td>
                                             <td class="center">
@@ -183,6 +191,8 @@ else
                                                     } else {
                                                         echo '<span class="label label-warning"><i class="fa fa-clock-o"></i> Reserved (Ready for Pickup)</span>';
                                                     }
+                                                } elseif($result->Status == 'Waitlist') {
+                                                    echo '<span class="label label-info"><i class="fa fa-list-ol"></i> Waitlist (Pending Return)</span>';
                                                 } elseif($result->Status == 'Collected') {
                                                     echo '<span class="label label-success"><i class="fa fa-check"></i> Collected & Issued</span>';
                                                 } elseif($result->Status == 'Cancelled') {
@@ -199,7 +209,7 @@ else
                                                     </a>
                                                     <br />
                                                 <?php } ?>
-                                                <?php if($result->Status == 'Reserved') { ?>
+                                                <?php if($result->Status == 'Reserved' || $result->Status == 'Waitlist') { ?>
                                                     <a href="my-reservations.php?action=cancel&resid=<?php echo htmlentities($result->resid);?>" 
                                                        onclick="return confirm('Are you sure you want to cancel this reservation?');" 
                                                        class="btn btn-danger btn-xs">

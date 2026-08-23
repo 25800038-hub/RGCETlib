@@ -11,11 +11,13 @@ if (strlen($_SESSION['alogin']) == 0) {
 
     $sqlOverdue = "SELECT 
                     tblissuedbookdetails.id,
-                    tblstudents.FullName,
+                    COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName,
                     tblbooks.BookName,
-                    tblissuedbookdetails.IssuesDate
+                    tblissuedbookdetails.IssuesDate,
+                    tblissuedbookdetails.StudentID as MemberID
                 FROM tblissuedbookdetails
-                JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentId
+                LEFT JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentId
+                LEFT JOIN tblteachers ON tblteachers.TeacherId = tblissuedbookdetails.StudentId
                 JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId
                 WHERE (tblissuedbookdetails.RetrunStatus = '' OR tblissuedbookdetails.RetrunStatus IS NULL)
                 ORDER BY tblissuedbookdetails.IssuesDate ASC";
@@ -49,9 +51,10 @@ if (strlen($_SESSION['alogin']) == 0) {
         }
     }
 
-    if ($overdueCount > 0) {
+    if ($overdueCount > 0 && !isset($_SESSION['overdue_alert_shown'])) {
         $overdueMessage = 'Overdue Alert: ' . $overdueCount . ' issued book(s) are overdue for 7 days or more.';
         echo '<script>alert(' . json_encode($overdueMessage) . ');</script>';
+        $_SESSION['overdue_alert_shown'] = true;
     }
     ?>
     <!DOCTYPE html>
@@ -68,7 +71,7 @@ if (strlen($_SESSION['alogin']) == 0) {
         <title>Online Library Management System | Admin Dash Board</title>
         <link href="assets/css/bootstrap.css" rel="stylesheet" />
         <link href="assets/css/font-awesome.css" rel="stylesheet" />
-        <link href="assets/css/style.css" rel="stylesheet" />
+        <link href="assets/css/style.css?v=1.5" rel="stylesheet" />
         <link href="http://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css" />
     </head>
 
@@ -83,6 +86,20 @@ if (strlen($_SESSION['alogin']) == 0) {
                     </div>
                 </div>
 
+                <?php if (isset($_SESSION['FullName'])) { ?>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div
+                                style="background: linear-gradient(to right, #4b3bb3, #8a4bcf); padding: 30px; border-radius: 12px; color: white; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                <h2 style="margin-top: 0; font-weight: 700;">Welcome Back,
+                                    <?php echo htmlentities($_SESSION['FullName']); ?></h2>
+                                <p style="margin-bottom: 0; font-size: 15px; opacity: 0.9;">Manage the entire library system,
+                                    oversee users, and track all activities from here.</p>
+                            </div>
+                        </div>
+                    </div>
+                <?php } ?>
+
                 <?php if ($overdueCount > 0) { ?>
                     <div class="row">
                         <div class="col-md-12">
@@ -92,8 +109,13 @@ if (strlen($_SESSION['alogin']) == 0) {
                                 <ul class="margin-top-10">
                                     <?php foreach ($overdueBooks as $overdue) { ?>
                                         <li>
-                                            <strong><?php echo htmlentities($overdue->FullName); ?></strong> -
-                                            <?php echo htmlentities($overdue->BookName); ?>
+                                            <strong><?php echo htmlentities($overdue->FullName); ?></strong>
+                                            <?php if (stripos($overdue->MemberID, 'TID') === 0): ?>
+                                                <span class="label label-info">Teacher</span>
+                                            <?php else: ?>
+                                                <span class="label label-success">Student</span>
+                                            <?php endif; ?>
+                                            - <?php echo htmlentities($overdue->BookName); ?>
                                             (Issued on <?php echo htmlentities($overdue->IssuesDate); ?>)
                                         </li>
                                     <?php } ?>
@@ -138,7 +160,7 @@ if (strlen($_SESSION['alogin']) == 0) {
                         </div>
                     </a>
 
-                    <a href="manage-issued-books.php">
+                    <a href="manage-issued-books.php?status=not_returned">
                         <div class="col-md-3 col-sm-3 col-xs-6">
                             <div class="dashboard-card dashboard-card-warning text-center">
                                 <i class="fa fa-recycle fa-5x"></i>
@@ -168,7 +190,7 @@ if (strlen($_SESSION['alogin']) == 0) {
 
                 <div class="row">
                     <a href="reg-students.php">
-                        <div class="col-md-4 col-sm-4 col-xs-6">
+                        <div class="col-md-3 col-sm-3 col-xs-6">
                             <div class="dashboard-card dashboard-card-success text-center">
                                 <i class="fa fa-users fa-5x"></i>
                                 <?php
@@ -179,13 +201,30 @@ if (strlen($_SESSION['alogin']) == 0) {
                                 $regstds = count($results3);
                                 ?>
                                 <h3><?php echo htmlentities($regstds); ?></h3>
-                                <div class="card-label">Registered Users</div>
+                                <div class="card-label">Registered Students</div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="reg-teachers.php">
+                        <div class="col-md-3 col-sm-3 col-xs-6">
+                            <div class="dashboard-card dashboard-card-success text-center">
+                                <i class="fa fa-user-md fa-5x"></i>
+                                <?php
+                                $sqlT = "SELECT id from tblteachers";
+                                $queryT = $dbh->prepare($sqlT);
+                                $queryT->execute();
+                                $resultsT = $queryT->fetchAll(PDO::FETCH_OBJ);
+                                $regteachers = count($resultsT);
+                                ?>
+                                <h3><?php echo htmlentities($regteachers); ?></h3>
+                                <div class="card-label">Registered Teachers</div>
                             </div>
                         </div>
                     </a>
 
                     <a href="manage-authors.php">
-                        <div class="col-md-4 col-sm-4 col-xs-6">
+                        <div class="col-md-3 col-sm-3 col-xs-6">
                             <div class="dashboard-card dashboard-card-info text-center">
                                 <i class="fa fa-user fa-5x"></i>
                                 <?php
@@ -202,7 +241,7 @@ if (strlen($_SESSION['alogin']) == 0) {
                     </a>
 
                     <a href="manage-categories.php">
-                        <div class="col-md-4 col-sm-4 col-xs-6">
+                        <div class="col-md-3 col-sm-3 col-xs-6">
                             <div class="dashboard-card dashboard-card-warning text-center">
                                 <i class="fa fa-file-archive-o fa-5x"></i>
                                 <?php

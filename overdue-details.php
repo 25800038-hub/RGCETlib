@@ -3,14 +3,14 @@ session_start();
 error_reporting(0);
 include('includes/config.php');
 
-if(strlen($_SESSION['login'])==0)
+if(strlen($_SESSION['login'])==0 && strlen($_SESSION['tlogin'])==0)
 {
     header('location:index.php');
 }
 else
 {
-    // Get the current student ID from session
-    $studentId = $_SESSION['stdid'];
+    // Get the current user ID from session
+    $studentId = isset($_SESSION['stdid']) ? $_SESSION['stdid'] : $_SESSION['teacherid'];
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -66,11 +66,10 @@ else
                                                 tblcategory.CategoryName,
                                                 tblissuedbookdetails.IssuesDate
                                             FROM tblissuedbookdetails
-                                            JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentId
                                             JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId
                                             JOIN tblauthors ON tblauthors.id = tblbooks.AuthorId
                                             JOIN tblcategory ON tblcategory.id = tblbooks.CatId
-                                            WHERE tblstudents.StudentId = :studentId
+                                            WHERE tblissuedbookdetails.StudentID = :studentId
                                             AND (tblissuedbookdetails.RetrunStatus = '' OR tblissuedbookdetails.RetrunStatus IS NULL)
                                             AND tblissuedbookdetails.IssuesDate <= DATE_SUB(NOW(), INTERVAL 7 DAY)
                                             ORDER BY tblissuedbookdetails.IssuesDate ASC";

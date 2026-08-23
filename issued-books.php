@@ -2,14 +2,14 @@
 session_start();
 error_reporting(0);
 include('includes/config.php');
-if(strlen($_SESSION['login'])==0)
+if(strlen($_SESSION['login'])==0 && strlen($_SESSION['tlogin'])==0)
     {   
 header('location:index.php');
 }
 else{
-$sid=$_SESSION['stdid'];
+$sid=isset($_SESSION['stdid']) ? $_SESSION['stdid'] : $_SESSION['teacherid'];
 $overdueBooks = array();
-$sqlOverdue = "SELECT tblbooks.BookName, tblissuedbookdetails.IssuesDate FROM tblissuedbookdetails JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentId JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId WHERE tblstudents.StudentId=:sid AND (tblissuedbookdetails.RetrunStatus='' OR tblissuedbookdetails.RetrunStatus IS NULL) ORDER BY tblissuedbookdetails.IssuesDate ASC";
+$sqlOverdue = "SELECT tblbooks.BookName, tblissuedbookdetails.IssuesDate FROM tblissuedbookdetails JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId WHERE tblissuedbookdetails.StudentID=:sid AND (tblissuedbookdetails.RetrunStatus='' OR tblissuedbookdetails.RetrunStatus IS NULL) ORDER BY tblissuedbookdetails.IssuesDate ASC";
 $queryOverdue = $dbh->prepare($sqlOverdue);
 $queryOverdue->bindParam(':sid', $sid, PDO::PARAM_STR);
 $queryOverdue->execute();
@@ -84,7 +84,7 @@ if($overdueCount > 0)
                     <!-- Advanced Tables -->
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                          Issued Books 
+                          <?php echo (isset($_GET['status']) && $_GET['status'] == 'not_returned') ? "Books Not Returned Yet" : "Issued Books"; ?>
                         </div>
                         <div class="panel-body">
                             <div class="table-responsive">
@@ -102,8 +102,12 @@ if($overdueCount > 0)
                                     </thead>
                                     <tbody>
 <?php 
-$sid=$_SESSION['stdid'];
-$sql="SELECT tblbooks.id as bookid,tblbooks.BookName,tblbooks.ISBNNumber,tblbooks.bookPdf,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid,tblissuedbookdetails.fine from  tblissuedbookdetails join tblstudents on tblstudents.StudentId=tblissuedbookdetails.StudentId join tblbooks on tblbooks.id=tblissuedbookdetails.BookId where tblstudents.StudentId=:sid order by tblissuedbookdetails.id desc";
+$sid = isset($_SESSION['stdid']) ? $_SESSION['stdid'] : $_SESSION['teacherid'];
+$whereClause = " where tblissuedbookdetails.StudentID=:sid";
+if(isset($_GET['status']) && $_GET['status'] == 'not_returned') {
+    $whereClause .= " AND (tblissuedbookdetails.RetrunStatus='' OR tblissuedbookdetails.RetrunStatus IS NULL)";
+}
+$sql="SELECT tblbooks.id as bookid,tblbooks.BookName,tblbooks.ISBNNumber,tblbooks.bookPdf,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid,tblissuedbookdetails.fine from  tblissuedbookdetails join tblbooks on tblbooks.id=tblissuedbookdetails.BookId" . $whereClause . " order by tblissuedbookdetails.id desc";
 $query = $dbh -> prepare($sql);
 $query-> bindParam(':sid', $sid, PDO::PARAM_STR);
 $query->execute();

@@ -14,12 +14,27 @@
 /* =============================================================
    GENERAL STYLES
  ============================================================ */
+a,
+a:hover,
+a:focus,
+a:active {
+    text-decoration: none;
+    outline: none !important;
+}
+
+html {
+    height: 100%;
+}
 
 body {
     font-family: 'Open Sans', sans-serif;
     line-height: 28px;
     background-color: rgb(227, 222, 202);
-
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
 }
 
 
@@ -31,8 +46,8 @@ body {
 
 .content-wrapper {
     margin-top: 40px;
-    min-height: 800px;
-    padding-bottom: 90px;
+    padding-bottom: 40px;
+    flex: 1 0 auto;
 }
 
 .header-line {
@@ -48,47 +63,227 @@ body {
 
 
 /* =============================================================
-   NAVBAR & MENU STYLES
+   ENHANCED HEADER & BRANDING BAR
  ============================================================ */
-
-.right-div {
-    float: right;
-    padding: 20px;
+.top-branding-bar {
+    background-color: rgb(227, 222, 202);
+    padding: 16px 0 14px;
+    border-bottom: 1px solid rgba(61, 56, 46, 0.12);
 }
 
-#menu-top a {
-    color: rgb(255, 255, 255);
-    text-decoration: none;
-    font-weight: 500;
-    padding: 25px 15px 25px 15px;
+.branding-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.branding-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.college-logo {
+    height: 80px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.15));
+    transition: transform 0.2s ease;
+}
+
+.college-logo:hover {
+    transform: scale(1.03);
+}
+
+.college-name {
+    font-family: 'Outfit', 'Open Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #2b251c;
+    letter-spacing: 0.4px;
+    margin: 0 0 4px 0;
+    line-height: 1.25;
+}
+
+.college-sub-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.lib-badge {
+    background: linear-gradient(135deg, #3d382e 0%, #564e40 100%);
+    color: #f7eedc;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-
 }
 
-.dropdown-menu li a {
-  color: black !important;
+.lib-subtext {
+    font-size: 13px;
+    font-weight: 600;
+    color: #5d5345;
 }
 
+.branding-user-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(61, 56, 46, 0.08);
+    border: 1px solid rgba(61, 56, 46, 0.15);
+    padding: 6px 14px;
+    border-radius: 30px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #3d382e;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2b251c;
+    line-height: 1.2;
+}
+
+.user-role {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9170E4;
+    text-transform: uppercase;
+}
+
+.btn-logout {
+    background: #dc2626;
+    color: #ffffff !important;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+}
+
+.btn-logout:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.35);
+}
+
+/* =============================================================
+   NAVIGATION MENU SECTION
+ ============================================================ */
 .menu-section {
-    background-color: rgb(61, 56, 46);
-    border-bottom: 5px solid rgb(238, 235, 248);
-    width: 100%
+    background: linear-gradient(90deg, #24201a 0%, #3d382e 50%, #2b261f 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 4px solid #9170E4;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    width: 100%;
 }
 
-.menu-top-active {
-    background-color: #eeeeee00;
+#menu-top {
+    margin: 0;
+}
+
+#menu-top > li > a {
+    color: #f3efe6 !important;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 16px 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    margin: 4px 2px;
+}
+
+#menu-top > li > a:hover,
+#menu-top > li > a:focus,
+#menu-top > li.open > a {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+#menu-top > li > a.menu-top-active {
+    background-color: #9170E4 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(145, 112, 228, 0.4);
+}
+
+.navbar-toggle {
+    background-color: #3d382e;
+    border-color: #9170E4;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.navbar-toggle .icon-bar {
+    background-color: #ffffff;
+}
+
+.dropdown-menu {
+    background-color: #2b261f;
+    border: 1px solid rgba(145, 112, 228, 0.3);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    padding: 6px 0;
+    margin-top: 2px;
+}
+
+.dropdown-menu > li > a {
+    color: #e2ded5 !important;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+}
+
+.dropdown-menu > li > a:hover,
+.dropdown-menu > li > a:focus {
+    background-color: #9170E4 !important;
+    color: #ffffff !important;
+    padding-left: 24px;
 }
 
 .navbar-inverse {
     background-color: rgb(227, 222, 202);
-    border-color: rgba(155, 153, 153, 0.23);
-
-}
-
-.navbar {
-    min-height: 90px;
-    margin-bottom: 0px;
-
+    border: none;
 }
 
 .navbar-inverse .navbar-collapse,

@@ -10,7 +10,7 @@ if (!empty($_POST["emailid"])) {
         exit;
     }
 
-    $sql = "SELECT id FROM tblstudents WHERE EmailId = :email UNION SELECT id FROM tblteachers WHERE EmailId = :email";
+    $sql = "SELECT id FROM tblteachers WHERE EmailId = :email UNION SELECT id FROM tblstudents WHERE EmailId = :email";
     $query = $dbh->prepare($sql);
     $query->bindParam(':email', $email, PDO::PARAM_STR);
     $query->execute();
@@ -24,17 +24,4 @@ if (!empty($_POST["emailid"])) {
     }
     exit;
 }
-
-if(!empty($_POST["isbn"])) {
-    $isbn = $_POST["isbn"];
-    $sql ="SELECT id FROM tblbooks WHERE ISBNNumber=:isbn";
-    $query = $dbh -> prepare($sql);
-    $query-> bindParam(':isbn', $isbn, PDO::PARAM_STR);
-    $query-> execute();
-    $results = $query -> fetchAll(PDO::FETCH_OBJ);
-
-    if($query -> rowCount() > 0){
-        echo "<span style='color:red'> ISBN already exists with another book. .</span>"; 
-        echo "<script>$('#add').prop('disabled',true);</script>";
-    } else { echo "<script>$('#add').prop('disabled',false);</script>";}
-}
+?>

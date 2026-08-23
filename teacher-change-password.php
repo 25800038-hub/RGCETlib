@@ -2,23 +2,23 @@
 session_start();
 include('includes/config.php');
 error_reporting(0);
-if (strlen($_SESSION['alogin']) == 0) {
-  header('location:index.php');
+if (strlen($_SESSION['tlogin']) == 0) {
+  header('location:teacherlogin.php');
 } else {
   if (isset($_POST['change'])) {
     $password = md5($_POST['password']);
     $newpassword = md5($_POST['newpassword']);
-    $username = $_SESSION['alogin'];
-    $sql = "SELECT Password FROM admin where UserName=:username and Password=:password";
+    $email = $_SESSION['tlogin'];
+    $sql = "SELECT Password FROM tblteachers WHERE EmailId=:email and Password=:password";
     $query = $dbh->prepare($sql);
-    $query->bindParam(':username', $username, PDO::PARAM_STR);
+    $query->bindParam(':email', $email, PDO::PARAM_STR);
     $query->bindParam(':password', $password, PDO::PARAM_STR);
     $query->execute();
     $results = $query->fetchAll(PDO::FETCH_OBJ);
     if ($query->rowCount() > 0) {
-      $con = "update admin set Password=:newpassword where UserName=:username";
+      $con = "update tblteachers set Password=:newpassword where EmailId=:email";
       $chngpwd1 = $dbh->prepare($con);
-      $chngpwd1->bindParam(':username', $username, PDO::PARAM_STR);
+      $chngpwd1->bindParam(':email', $email, PDO::PARAM_STR);
       $chngpwd1->bindParam(':newpassword', $newpassword, PDO::PARAM_STR);
       $chngpwd1->execute();
       $msg = "Your Password succesfully changed";
@@ -84,7 +84,7 @@ if (strlen($_SESSION['alogin']) == 0) {
       <div class="container">
         <div class="row pad-botm">
           <div class="col-md-12">
-            <h4 class="header-line">Change Admin Password</h4>
+            <h4 class="header-line">Change Teacher Password</h4>
           </div>
         </div>
         <?php if ($error) { ?>

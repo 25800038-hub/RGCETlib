@@ -3,20 +3,18 @@ session_start();
 error_reporting(0);
 include('includes/config.php');
 
-if (strlen($_SESSION['login']) == 0) {
-    header('location:index.php');
+if (strlen($_SESSION['tlogin']) == 0) {
+    header('location:teacherlogin.php');
 } else {
-    $sid = $_SESSION['stdid'];
+    $sid = $_SESSION['teacherid'];
     $overdueBooks = array();
     $overdueCount = 0;
 
     $sqlOverdue = "SELECT
                         tblissuedbookdetails.id,
-                        tblstudents.FullName,
                         tblbooks.BookName,
                         tblissuedbookdetails.IssuesDate
                     FROM tblissuedbookdetails
-                    JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentID
                     JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId
                     WHERE tblissuedbookdetails.StudentID = :sid
                     AND (tblissuedbookdetails.RetrunStatus = '' OR tblissuedbookdetails.RetrunStatus IS NULL)
@@ -51,10 +49,10 @@ if (strlen($_SESSION['login']) == 0) {
             }
         }
     }
-    if ($overdueCount > 0 && !isset($_SESSION['std_overdue_alert_shown'])) {
+    if ($overdueCount > 0 && !isset($_SESSION['tch_overdue_alert_shown'])) {
         $overdueMessage = 'Overdue Alert: ' . $overdueCount . ' issued book(s) are overdue for 7 days or more.';
         echo '<script>alert(' . json_encode($overdueMessage) . ');</script>';
-        $_SESSION['std_overdue_alert_shown'] = true;
+        $_SESSION['tch_overdue_alert_shown'] = true;
     }
     ?>
     <!DOCTYPE html>
@@ -80,7 +78,7 @@ if (strlen($_SESSION['login']) == 0) {
                 <div class="row pad-botm">
                     <div class="col-md-12">
                         <center>
-                            <h4 class="header-line">STUDENT DASHBOARD</h4>
+                            <h4 class="header-line">TEACHER DASHBOARD</h4>
                         </center>
                     </div>
                 </div>
@@ -92,8 +90,8 @@ if (strlen($_SESSION['login']) == 0) {
                                 style="background: linear-gradient(to right, #4b3bb3, #8a4bcf); padding: 30px; border-radius: 12px; color: white; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                                 <h2 style="margin-top: 0; font-weight: 700;">Welcome Back,
                                     <?php echo htmlentities($_SESSION['FullName']); ?></h2>
-                                <p style="margin-bottom: 0; font-size: 15px; opacity: 0.9;">Track your library activity,
-                                    reservations, and books effortlessly.</p>
+                                <p style="margin-bottom: 0; font-size: 15px; opacity: 0.9;">Manage your books, track student
+                                    activities, and oversee reservations.</p>
                             </div>
                         </div>
                     </div>
@@ -161,7 +159,7 @@ if (strlen($_SESSION['login']) == 0) {
                                 <i class="fa fa-recycle fa-5x"></i>
                                 <?php
                                 $rsts = 0;
-                                $sid = $_SESSION['stdid'];
+                                $sid = $_SESSION['teacherid'];
                                 $sql2 = "SELECT id from tblissuedbookdetails 
                             where StudentID=:sid 
                             and (RetrunStatus=:rsts || RetrunStatus is null || RetrunStatus='')";

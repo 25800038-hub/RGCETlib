@@ -110,7 +110,9 @@ foreach($results as $result)
                                         <tr class="odd gradeX">
                                             <td class="center"><?php echo htmlentities($cnt);?></td>
                                             <td class="center"><?php echo htmlentities($result->StudentId);?></td>
-                                            <td class="center"><?php echo htmlentities($result->FullName);?></td>
+                                            <td class="center"><?php echo htmlentities($result->FullName);?>
+                                            <br><span class="label label-success">Student</span>
+                                            </td>
                                             <td class="center"><?php echo htmlentities($result->BookName);?></td>
                                             <td class="center"><?php echo htmlentities($result->IssuesDate);?></td>
                                             <td class="center"><?php if($result->ReturnDate==''): echo "Not returned yet";

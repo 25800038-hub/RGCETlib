@@ -18,7 +18,7 @@ else
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Online Library Management System | Overdue Students</title>
+    <title>Online Library Management System | Overdue Members</title>
     <link href="assets/css/bootstrap.css" rel="stylesheet" />
     <link href="assets/css/font-awesome.css" rel="stylesheet" />
     <link href="assets/css/style.css" rel="stylesheet" />
@@ -31,7 +31,7 @@ else
     <div class="container">
         <div class="row pad-botm">
             <div class="col-md-12">
-                <h4 class="header-line">Overdue Students Details</h4>
+                <h4 class="header-line">Overdue Members Details</h4>
             </div>
         </div>
 
@@ -47,7 +47,7 @@ else
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Student Name</th>
+                                        <th>Member Name</th>
                                         <th>Email</th>
                                         <th>Mobile</th>
                                         <th>Book Name</th>
@@ -60,14 +60,16 @@ else
                                 <?php
                                 $sqlOverdue = "SELECT 
                                                 tblissuedbookdetails.id, 
-                                                tblstudents.FullName, 
-                                                tblstudents.EmailId, 
-                                                tblstudents.MobileNumber, 
+                                                COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName, 
+                                                COALESCE(tblstudents.EmailId, tblteachers.EmailId) as EmailId, 
+                                                COALESCE(tblstudents.MobileNumber, tblteachers.MobileNumber) as MobileNumber, 
                                                 tblbooks.BookName, 
                                                 tblbooks.ISBNNumber, 
-                                                tblissuedbookdetails.IssuesDate
+                                                tblissuedbookdetails.IssuesDate,
+                                                tblissuedbookdetails.StudentID as MemberID
                                             FROM tblissuedbookdetails
-                                            JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentId
+                                            LEFT JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentID
+                                            LEFT JOIN tblteachers ON tblteachers.TeacherId = tblissuedbookdetails.StudentID
                                             JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId
                                             WHERE (tblissuedbookdetails.RetrunStatus = '' OR tblissuedbookdetails.RetrunStatus IS NULL)
                                             AND tblissuedbookdetails.IssuesDate <= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -89,7 +91,15 @@ else
                                 ?>
                                     <tr>
                                         <td><?php echo htmlentities($cnt); ?></td>
-                                        <td><?php echo htmlentities($overdue->FullName); ?></td>
+                                        <td>
+                                            <?php echo htmlentities($overdue->FullName); ?>
+                                            <br>
+                                            <?php if(stripos($overdue->MemberID, 'TID') === 0): ?>
+                                                <span class="label label-info">Teacher</span>
+                                            <?php else: ?>
+                                                <span class="label label-success">Student</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo htmlentities($overdue->EmailId); ?></td>
                                         <td><?php echo htmlentities($overdue->MobileNumber); ?></td>
                                         <td><?php echo htmlentities($overdue->BookName); ?></td>
@@ -105,7 +115,7 @@ else
                                 {
                                 ?>
                                     <tr>
-                                        <td colspan="8" class="text-center">No overdue students found.</td>
+                                        <td colspan="8" class="text-center">No overdue members found.</td>
                                     </tr>
                                 <?php
                                 }

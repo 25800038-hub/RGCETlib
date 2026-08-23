@@ -15,38 +15,36 @@ else
         $mobileno = $_POST['mobileno'];
         $email = trim($_POST['email']);
         $department = $_POST['department'];
-        $year = $_POST['year'];
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo "<script>alert('Please enter a valid email address.');</script>";
         }
         else {
-            $count_my_page = "../studentid.txt";
+            $count_my_page = "../teacherid.txt";
             $hits = file($count_my_page, FILE_IGNORE_NEW_LINES);
             $hits[0]++;
             $fp = fopen($count_my_page, "w");
             fputs($fp, $hits[0] . "\n");
             fclose($fp);
-            $StudentId = $hits[0];
+            $TeacherId = $hits[0];
             $password = md5($_POST['password']);
             $status = 1;
 
-            $sql = "INSERT INTO tblstudents(StudentId,FullName,MobileNumber,EmailId,Password,Status,Department,Year) VALUES(:StudentId,:fname,:mobileno,:email,:password,:status,:department,:year)";
+            $sql = "INSERT INTO tblteachers(TeacherId,FullName,MobileNumber,EmailId,Password,Status,Department) VALUES(:TeacherId,:fname,:mobileno,:email,:password,:status,:department)";
             $query = $dbh->prepare($sql);
-            $query->bindParam(':StudentId', $StudentId, PDO::PARAM_STR);
+            $query->bindParam(':TeacherId', $TeacherId, PDO::PARAM_STR);
             $query->bindParam(':fname', $fname, PDO::PARAM_STR);
             $query->bindParam(':mobileno', $mobileno, PDO::PARAM_STR);
             $query->bindParam(':email', $email, PDO::PARAM_STR);
             $query->bindParam(':password', $password, PDO::PARAM_STR);
             $query->bindParam(':status', $status, PDO::PARAM_STR);
             $query->bindParam(':department', $department, PDO::PARAM_STR);
-            $query->bindParam(':year', $year, PDO::PARAM_STR);
             $query->execute();
             $lastInsertId = $dbh->lastInsertId();
 
             if($lastInsertId)
             {
-                echo '<script>alert("Student registration successful and the Student ID is "+"'.$StudentId.'")</script>';
+                echo '<script>alert("Teacher registration successful and the Teacher ID is "+"'.$TeacherId.'")</script>';
             }
             else
             {
@@ -62,7 +60,7 @@ else
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Online Library Management System | Add Student</title>
+    <title>Online Library Management System | Add Teacher</title>
     <link href="assets/css/bootstrap.css" rel="stylesheet" />
     <link href="assets/css/font-awesome.css" rel="stylesheet" />
     <link href="assets/css/style.css" rel="stylesheet" />
@@ -101,7 +99,7 @@ else
 
         $("#loaderIcon").show();
         jQuery.ajax({
-            url: "check_availability.php",
+            url: "check_teacher_availability.php",
             data:'emailid='+encodeURIComponent(email),
             type: "POST",
             success:function(data){
@@ -119,14 +117,14 @@ else
     <div class="container">
         <div class="row pad-botm">
             <div class="col-md-12">
-                <h4 class="header-line">Add Student</h4>
+                <h4 class="header-line">Add Teacher</h4>
             </div>
         </div>
         <div class="row">
             <div class="col-md-9 col-md-offset-1">
                 <div class="panel panel-danger">
                     <div class="panel-heading">
-                        Student Registration Form
+                        Teacher Registration Form
                     </div>
                     <div class="panel-body">
                         <form name="signup" method="post" onSubmit="return valid();">
@@ -142,7 +140,7 @@ else
 
                             <div class="form-group">
                                 <label>Department :</label>
-                                <select class="form-control" name="department" id="department" required onchange="updateYearOptions()">
+                                <select class="form-control" name="department" required>
                                     <option value="">Select Department</option>
                                     <option value="MCA">MCA</option>
                                     <option value="MBA">MBA</option>
@@ -151,13 +149,6 @@ else
                                     <option value="CSE">CSE</option>
                                     <option value="ECE">ECE</option>
                                     <option value="IT">IT</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Year :</label>
-                                <select class="form-control" name="year" id="year" required>
-                                    <option value="">Select Year</option>
                                 </select>
                             </div>
 
@@ -189,30 +180,6 @@ else
 <script src="assets/js/jquery-1.10.2.js"></script>
 <script src="assets/js/bootstrap.js"></script>
 <script src="assets/js/custom.js"></script>
-<script>
-function updateYearOptions() {
-    var dept = document.getElementById("department").value;
-    var yearSelect = document.getElementById("year");
-    
-    yearSelect.innerHTML = '<option value="">Select Year</option>';
-    
-    if (dept === "") return;
-    
-    var years = [];
-    if (dept === "MCA" || dept === "MBA") {
-        years = ["I", "II"];
-    } else {
-        years = ["I", "II", "III", "IV", "V"];
-    }
-    
-    for (var i = 0; i < years.length; i++) {
-        var opt = document.createElement("option");
-        opt.value = years[i];
-        opt.innerHTML = years[i];
-        yearSelect.appendChild(opt);
-    }
-}
-</script>
 </body>
 </html>
 <?php } ?>

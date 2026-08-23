@@ -3,22 +3,22 @@ session_start();
 error_reporting(0);
 include('includes/config.php');
 
-if(strlen($_SESSION['login'])==0)
+if(strlen($_SESSION['login'])==0 && strlen($_SESSION['tlogin'])==0)
 {   
     header('location:index.php');
     exit();
 }
 else
 { 
-    $sid = $_SESSION['stdid'];
+    $sid = isset($_SESSION['stdid']) ? $_SESSION['stdid'] : $_SESSION['teacherid'];
 
     // Handle Book Reservation Request
     if(isset($_GET['action']) && $_GET['action'] == 'reserve' && isset($_GET['bookid']))
     {
         $bookid = intval($_GET['bookid']);
 
-        // Check if student already has a pending reservation for this book
-        $chkResSql = "SELECT id FROM tblreservations WHERE StudentID = :sid AND BookId = :bookid AND Status = 'Reserved'";
+        // Check if student already has a pending reservation or waitlist for this book
+        $chkResSql = "SELECT id FROM tblreservations WHERE StudentID = :sid AND BookId = :bookid AND Status IN ('Reserved', 'Waitlist')";
         $chkResQuery = $dbh->prepare($chkResSql);
         $chkResQuery->bindParam(':sid', $sid, PDO::PARAM_STR);
         $chkResQuery->bindParam(':bookid', $bookid, PDO::PARAM_INT);
@@ -26,7 +26,7 @@ else
 
         if($chkResQuery->rowCount() > 0)
         {
-            $_SESSION['error'] = "You have already reserved this book. Please check My Reservations.";
+            $_SESSION['error'] = "You have already reserved or waitlisted this book. Please check My Reservations.";
             header('location:listed-books.php');
             exit();
         }
@@ -41,6 +41,27 @@ else
         if($chkIssQuery->rowCount() > 0)
         {
             $_SESSION['error'] = "You already have an active borrowed copy of this book.";
+            header('location:listed-books.php');
+            exit();
+        }
+
+        // Check current borrowing/reservation limits
+        $isTeacher = isset($_SESSION['teacherid']) && !empty($_SESSION['teacherid']) ? true : false;
+        $maxLimit = $isTeacher ? 5 : 3;
+
+        $limitSql = "SELECT 
+                        (SELECT COUNT(*) FROM tblissuedbookdetails WHERE StudentID = :sid AND (RetrunStatus = '' OR RetrunStatus IS NULL OR RetrunStatus = '0')) AS currentIssued,
+                        (SELECT COUNT(*) FROM tblreservations WHERE StudentID = :sid2 AND Status IN ('Reserved', 'Waitlist')) AS currentReserved";
+        $limitQuery = $dbh->prepare($limitSql);
+        $limitQuery->bindParam(':sid', $sid, PDO::PARAM_STR);
+        $limitQuery->bindParam(':sid2', $sid, PDO::PARAM_STR);
+        $limitQuery->execute();
+        $limitRow = $limitQuery->fetch(PDO::FETCH_OBJ);
+        
+        $totalHoldings = intval($limitRow->currentIssued) + intval($limitRow->currentReserved);
+        if($totalHoldings >= $maxLimit) {
+            $roleStr = $isTeacher ? "Faculty" : "Students";
+            $_SESSION['error'] = "$roleStr can only borrow/reserve up to $maxLimit books at a time. You currently have $totalHoldings active (issued or reserved).";
             header('location:listed-books.php');
             exit();
         }
@@ -73,8 +94,14 @@ else
             }
             else
             {
-                $_SESSION['error'] = "Sorry, this book is currently out of stock.";
-                header('location:listed-books.php');
+                $resInsert = "INSERT INTO tblreservations(BookId, StudentID, Status) VALUES(:bookid, :sid, 'Waitlist')";
+                $insertQuery = $dbh->prepare($resInsert);
+                $insertQuery->bindParam(':bookid', $bookid, PDO::PARAM_INT);
+                $insertQuery->bindParam(':sid', $sid, PDO::PARAM_STR);
+                $insertQuery->execute();
+
+                $_SESSION['msg'] = "You have been added to the waitlist. We will reserve it for you when a copy becomes available.";
+                header('location:my-reservations.php');
                 exit();
             }
         }
@@ -354,9 +381,11 @@ else
                                     <i class="fa fa-bookmark"></i> Reserve Physical Copy
                                 </a>
                             <?php } else { ?>
-                                <button class="btn btn-default btn-block disabled" disabled>
-                                    <i class="fa fa-ban"></i> Out of Stock (Physical)
-                                </button>
+                                <a href="listed-books.php?action=reserve&bookid=<?php echo htmlentities($result->bookid);?>" 
+                                   onclick="return confirm('Join Waitlist:\n\nBook: <?php echo addslashes(htmlentities($result->BookName));?>\n\nThis book is out of stock. You will be added to the waitlist and it will be reserved for you automatically when a copy is returned. Proceed?');" 
+                                   class="btn btn-default btn-block" style="color: #333; border-color: #ccc; background-color: #f9f9f9;">
+                                    <i class="fa fa-clock-o"></i> Out of Stock - Join Waitlist
+                                </a>
                             <?php } ?>
                         </div>
                     </div>

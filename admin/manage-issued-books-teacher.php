@@ -8,7 +8,7 @@ header('location:index.php');
 }
 else{
 $overdueBooks = array();
-$sqlOverdue = "SELECT tblissuedbookdetails.id, COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName, tblbooks.BookName, tblissuedbookdetails.IssuesDate FROM tblissuedbookdetails LEFT JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentID LEFT JOIN tblteachers ON tblteachers.TeacherId = tblissuedbookdetails.StudentID JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId WHERE (tblissuedbookdetails.RetrunStatus='' OR tblissuedbookdetails.RetrunStatus IS NULL) ORDER BY tblissuedbookdetails.IssuesDate ASC";
+$sqlOverdue = "SELECT tblissuedbookdetails.id, tblteachers.FullName, tblbooks.BookName, tblissuedbookdetails.IssuesDate FROM tblissuedbookdetails JOIN tblteachers ON tblteachers.TeacherId = tblissuedbookdetails.StudentID JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId WHERE (tblissuedbookdetails.RetrunStatus='' OR tblissuedbookdetails.RetrunStatus IS NULL) ORDER BY tblissuedbookdetails.IssuesDate ASC";
 $queryOverdue = $dbh->prepare($sqlOverdue);
 $queryOverdue->execute();
 $resultsOverdue = $queryOverdue->fetchAll(PDO::FETCH_OBJ);
@@ -52,7 +52,7 @@ if($overdueCount > 0)
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Online Library Management System | Manage Issued Books</title>
+    <title>Online Library Management System | Manage Issued Books (Teachers)</title>
     <!-- BOOTSTRAP CORE STYLE  -->
     <link href="assets/css/bootstrap.css" rel="stylesheet" />
     <!-- FONT AWESOME STYLE  -->
@@ -73,7 +73,7 @@ if($overdueCount > 0)
          <div class="container">
         <div class="row pad-botm">
             <div class="col-md-12">
-                <h4 class="header-line">Manage Issued Books</h4>
+                <h4 class="header-line">Manage Issued Books (Teachers)</h4>
     </div>
      <div class="row">
     <?php if($_SESSION['error']!="")
@@ -133,7 +133,7 @@ if($overdueCount > 0)
                     <!-- Advanced Tables -->
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                          <?php echo (isset($_GET['status']) && $_GET['status'] == 'not_returned') ? "Books Not Returned Yet" : "Issued Books"; ?>
+                          Issued Books 
                         </div>
                         <div class="panel-body">
                             <div class="table-responsive">
@@ -141,7 +141,7 @@ if($overdueCount > 0)
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th><?php echo (isset($_GET['status']) && $_GET['status'] == 'not_returned') ? "Member Name" : "Student Name"; ?></th>
+                                            <th>Teacher Name</th>
                                             <th>Book Name</th>
                                             <th>ISBN </th>
                                             <th>Issued Date</th>
@@ -151,12 +151,7 @@ if($overdueCount > 0)
                                         </tr>
                                     </thead>
                                     <tbody>
-<?php 
-$whereClause = " WHERE tblissuedbookdetails.StudentID NOT LIKE 'TID%'";
-if(isset($_GET['status']) && $_GET['status'] == 'not_returned') {
-    $whereClause = " WHERE (tblissuedbookdetails.RetrunStatus='' OR tblissuedbookdetails.RetrunStatus IS NULL)";
-}
-$sql = "SELECT COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName, tblbooks.BookName, tblbooks.ISBNNumber, tblissuedbookdetails.IssuesDate, tblissuedbookdetails.ReturnDate, tblissuedbookdetails.id as rid, tblissuedbookdetails.StudentID as MemberID FROM tblissuedbookdetails LEFT JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentID LEFT JOIN tblteachers ON tblteachers.TeacherId = tblissuedbookdetails.StudentID JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId" . $whereClause . " ORDER BY tblissuedbookdetails.id DESC";
+<?php $sql = "SELECT tblteachers.FullName,tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid from  tblissuedbookdetails join tblteachers on tblteachers.TeacherId=tblissuedbookdetails.StudentID join tblbooks on tblbooks.id=tblissuedbookdetails.BookId order by tblissuedbookdetails.id desc";
 $query = $dbh -> prepare($sql);
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
@@ -173,14 +168,8 @@ $isOverdue = ($daysSinceIssue >= 7 && $result->ReturnDate == "");
 ?>
 <tr class="odd gradeX<?php echo $isOverdue ? ' danger' : ''; ?>">
                                             <td class="center"><?php echo htmlentities($cnt);?></td>
-                                            <td class="center">
-                                                <?php echo htmlentities($result->FullName);?>
-                                                <br>
-                                                <?php if(stripos($result->MemberID, 'TID') === 0): ?>
-                                                    <span class="label label-info">Teacher</span>
-                                                <?php else: ?>
-                                                    <span class="label label-success">Student</span>
-                                                <?php endif; ?>
+                                            <td class="center"><?php echo htmlentities($result->FullName);?>
+                                            <br><span class="label label-info">Teacher</span>
                                             </td>
                                             <td class="center"><?php echo htmlentities($result->BookName);?></td>
                                             <td class="center"><?php echo htmlentities($result->ISBNNumber);?></td>
@@ -202,10 +191,7 @@ $isOverdue = ($daysSinceIssue >= 7 && $result->ReturnDate == "");
                                             ?></td>
                                             <td class="center">
 
-                                            <?php 
-                                            $editPage = (stripos($result->MemberID, 'TID') === 0) ? 'update-issue-bookdetails-teacher.php' : 'update-issue-bookdeails.php';
-                                            ?>
-                                            <a href="<?php echo $editPage; ?>?rid=<?php echo htmlentities($result->rid);?>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button>
+                                            <a href="update-issue-bookdetails-teacher.php?rid=<?php echo htmlentities($result->rid);?>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button>
                                          
                                             </td>
                                         </tr>

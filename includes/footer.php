@@ -76,8 +76,12 @@
    SITE FOOTER — RGCET gray Theme
    ============================================================ */
     .site-footer {
-        margin-top: 50px;
+        margin-top: auto;
+        margin-bottom: 0;
+        padding-bottom: 0;
         font-family: 'Inter', 'Open Sans', sans-serif;
+        flex-shrink: 0;
+        width: 100%;
     }
 
     /* Banner image — full width, left-aligned */
@@ -219,6 +223,7 @@
 
         .footer-links-section .col-md-3 {
             margin-bottom: 25px;
+
         }
     }
 </style>

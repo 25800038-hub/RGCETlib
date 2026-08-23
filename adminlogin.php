@@ -9,7 +9,7 @@ if(isset($_POST['login']))
 {
 $username=$_POST['username'];
 $password=md5($_POST['password']);
-$sql ="SELECT UserName,Password FROM admin WHERE UserName=:username and Password=:password";
+$sql ="SELECT UserName,Password,FullName FROM admin WHERE UserName=:username and Password=:password";
 $query= $dbh -> prepare($sql);
 $query-> bindParam(':username', $username, PDO::PARAM_STR);
 $query-> bindParam(':password', $password, PDO::PARAM_STR);
@@ -18,6 +18,7 @@ $results=$query->fetchAll(PDO::FETCH_OBJ);
 if($query->rowCount() > 0)
 {
 $_SESSION['alogin']=$_POST['username'];
+$_SESSION['FullName'] = $results[0]->FullName;
 echo "<script type='text/javascript'> document.location ='admin/dashboard.php'; </script>";
 } else{
 echo "<script>alert('Invalid Details');</script>";
@@ -37,7 +38,7 @@ echo "<script>alert('Invalid Details');</script>";
     <!-- FONT AWESOME STYLE  -->
     <link href="assets/css/font-awesome.css" rel="stylesheet" />
     <!-- CUSTOM STYLE  -->
-    <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/style.css?v=1.5" rel="stylesheet" />
     <!-- GOOGLE FONT -->
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css' />
 
