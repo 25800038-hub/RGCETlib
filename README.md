@@ -52,3 +52,41 @@ A modern, robust PHP-based Library Management System (LMS) designed to handle bo
 3. Users browse `listed-books.php` to reserve books or join the waitlist.
 4. Admin reviews active reservations in `manage-reservations.php` and issues physical copies.
 5. Users return books at the counter, the Admin marks them as returned, and the waitlist engine seamlessly routes the freed book to the next person in line.
+
+### Waitlist & Reservation Flow Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> InStock: User Clicks Reserve
+    [*] --> OutOfStock: User Clicks Join Waitlist
+    
+    InStock --> Reserved: Book Reserved (3-Day Limit)
+    OutOfStock --> Waitlist: Added to Queue
+    
+    Reserved --> Collected: Admin Issues Book
+    Reserved --> Cancelled: User/Admin Cancels
+    Reserved --> Expired: 3 Days Pass
+    
+    Collected --> Returned: Admin Marks Returned
+    
+    Waitlist --> Reserved: Auto-Promoted (on Return/Cancel)
+    Waitlist --> Cancelled: User/Admin Cancels
+```
+
+### Database Entity Relationship
+
+```mermaid
+erDiagram
+    ADMIN ||--o{ TBLBOOKS : manages
+    TBLAUTHORS ||--o{ TBLBOOKS : writes
+    TBLCATEGORY ||--o{ TBLBOOKS : categorizes
+    
+    TBLSTUDENTS ||--o{ TBLRESERVATIONS : makes
+    TBLTEACHERS ||--o{ TBLRESERVATIONS : makes
+    
+    TBLBOOKS ||--o{ TBLRESERVATIONS : reserved_in
+    TBLBOOKS ||--o{ TBLISSUEDBOOKDETAILS : issued_in
+    
+    TBLSTUDENTS ||--o{ TBLISSUEDBOOKDETAILS : borrows
+    TBLTEACHERS ||--o{ TBLISSUEDBOOKDETAILS : borrows
+```
