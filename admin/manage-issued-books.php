@@ -148,6 +148,8 @@ if($overdueCount > 0)
                                             <th>Return Date</th>
                                             <th>Days Overdue</th>
                                             <th>Action</th>
+                                            <th style="display:none;">Department</th>
+                                            <th style="display:none;">Year</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -156,7 +158,7 @@ $whereClause = " WHERE tblissuedbookdetails.StudentID NOT LIKE 'TID%'";
 if(isset($_GET['status']) && $_GET['status'] == 'not_returned') {
     $whereClause = " WHERE (tblissuedbookdetails.RetrunStatus='' OR tblissuedbookdetails.RetrunStatus IS NULL)";
 }
-$sql = "SELECT COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName, tblbooks.BookName, tblbooks.ISBNNumber, tblissuedbookdetails.IssuesDate, tblissuedbookdetails.ReturnDate, tblissuedbookdetails.id as rid, tblissuedbookdetails.StudentID as MemberID FROM tblissuedbookdetails LEFT JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentID LEFT JOIN tblteachers ON tblteachers.TeacherId = tblissuedbookdetails.StudentID JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId" . $whereClause . " ORDER BY tblissuedbookdetails.id DESC";
+$sql = "SELECT COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName, COALESCE(tblstudents.Department, tblteachers.Department) as Department, tblstudents.Year as Year, tblbooks.BookName, tblbooks.ISBNNumber, tblissuedbookdetails.IssuesDate, tblissuedbookdetails.ReturnDate, tblissuedbookdetails.id as rid, tblissuedbookdetails.StudentID as MemberID FROM tblissuedbookdetails LEFT JOIN tblstudents ON tblstudents.StudentId = tblissuedbookdetails.StudentID LEFT JOIN tblteachers ON tblteachers.TeacherId = tblissuedbookdetails.StudentID JOIN tblbooks ON tblbooks.id = tblissuedbookdetails.BookId" . $whereClause . " ORDER BY tblissuedbookdetails.id DESC";
 $query = $dbh -> prepare($sql);
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
@@ -208,6 +210,8 @@ $isOverdue = ($daysSinceIssue >= 7 && $result->ReturnDate == "");
                                             <a href="<?php echo $editPage; ?>?rid=<?php echo htmlentities($result->rid);?>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button>
                                          
                                             </td>
+                                            <td style="display:none;"><?php echo htmlentities($result->Department);?></td>
+                                            <td style="display:none;"><?php echo htmlentities($result->Year);?></td>
                                         </tr>
  <?php $cnt=$cnt+1;}} ?>
                                 </table>
@@ -237,6 +241,42 @@ $isOverdue = ($daysSinceIssue >= 7 && $result->ReturnDate == "");
     <script src="assets/js/dataTables/dataTables.bootstrap.js"></script>
       <!-- CUSTOM SCRIPTS  -->
     <script src="assets/js/custom.js"></script>
+    <script>
+        $(document).ready(function() {
+            var table = $('#dataTables-example').DataTable();
+            
+            // Add Year Filter (Create first so we can reference it)
+            var yearFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Years</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select>')
+                .on('change', function() {
+                    var val = $(this).val().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(9).search(val ? '^'+val+'$' : '', true, false).draw();
+                });
+
+            // Add Department Filter
+            var deptFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Departments</option><option value="MCA">MCA</option><option value="MBA">MBA</option><option value="AI&ML">AI&ML</option><option value="AI&DS">AI&DS</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="IT">IT</option></select>')
+                .appendTo('.dataTables_length')
+                .on('change', function() {
+                    var rawVal = $(this).val();
+                    var val = rawVal.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(8).search(val ? '^'+val+'$' : '', true, false).draw();
+                    
+                    // Update Year Filter options
+                    var selectedYear = yearFilter.val();
+                    yearFilter.empty().append('<option value="">All Years</option><option value="I">I</option><option value="II">II</option>');
+                    if (rawVal !== 'MCA' && rawVal !== 'MBA') {
+                        yearFilter.append('<option value="III">III</option><option value="IV">IV</option><option value="V">V</option>');
+                    }
+                    if (yearFilter.find('option[value="'+selectedYear+'"]').length > 0) {
+                        yearFilter.val(selectedYear);
+                    } else {
+                        yearFilter.val('');
+                        table.column(9).search('', true, false).draw();
+                    }
+                });
+
+            yearFilter.appendTo('.dataTables_length');
+        });
+    </script>
 </body>
 </html>
 <?php } ?>

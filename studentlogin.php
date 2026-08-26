@@ -109,15 +109,18 @@ if (isset($_POST['login'])) {
                             <form role="form" method="post">
                                 <div class="form-group">
                                     <label>Enter Email id</label>
-                                    <input class="form-control" type="text" name="emailid" required autocomplete="off" placeholder="e.g. 25800039@rgcet.edu.in" />
+                                    <input class="form-control" type="text" name="emailid" required autocomplete="off"
+                                        placeholder="Enter your email" />
                                 </div>
                                 <div class="form-group">
                                     <label>Password</label>
-                                    <input class="form-control" type="password" name="password" required autocomplete="off" placeholder="Enter your password" />
+                                    <input class="form-control" type="password" name="password" required
+                                        autocomplete="off" placeholder="Enter your password" />
                                     <p class="help-block"><a href="user-forgot-password.php">Forgot Password?</a></p>
                                 </div>
 
-                                <button type="submit" name="login" class="btn btn-info"><i class="fa fa-sign-in"></i> LOGIN</button>
+                                <button type="submit" name="login" class="btn btn-info"><i class="fa fa-sign-in"></i>
+                                    LOGIN</button>
                             </form>
                         </div>
                     </div>

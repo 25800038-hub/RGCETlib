@@ -171,6 +171,9 @@ else
                                             <th>Pickup Due</th>
                                             <th>Status</th>
                                             <th>Action</th>
+                                            <th style="display:none;">Member Type</th>
+                                            <th style="display:none;">Department</th>
+                                            <th style="display:none;">Year</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -183,6 +186,8 @@ else
                                                 tblreservations.StudentID as MemberID,
                                                 COALESCE(tblstudents.FullName, tblteachers.FullName) as FullName,
                                                 COALESCE(tblstudents.MobileNumber, tblteachers.MobileNumber) as MobileNumber,
+                                                COALESCE(tblstudents.Department, tblteachers.Department) as Department,
+                                                tblstudents.Year,
                                                 tblbooks.BookName,
                                                 tblbooks.ISBNNumber,
                                                 tblbooks.bookImage
@@ -275,6 +280,9 @@ else
                                                     <span class="text-muted"><i class="fa fa-ban"></i> No action</span>
                                                 <?php } ?>
                                             </td>
+                                            <td style="display:none;"><?php echo stripos($result->MemberID, 'TID') === 0 ? 'Teacher' : 'Student'; ?></td>
+                                            <td style="display:none;"><?php echo htmlentities($result->Department);?></td>
+                                            <td style="display:none;"><?php echo htmlentities($result->Year);?></td>
                                         </tr>
                                     <?php 
                                             $cnt++;
@@ -303,8 +311,54 @@ else
     <script src="assets/js/dataTables/dataTables.bootstrap.js"></script>
     <script src="assets/js/custom.js"></script>
     <script>
-        $(document).ready(function () {
-            $('#dataTables-example').dataTable();
+        $(document).ready(function() {
+            var table = $('#dataTables-example').DataTable();
+            
+            // Add Member Type Filter
+            var memberFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Members</option><option value="Student">Student</option><option value="Teacher">Teacher</option></select>')
+                .appendTo('.dataTables_length')
+                .on('change', function() {
+                    var rawVal = $(this).val();
+                    var val = rawVal.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(9).search(val ? '^'+val+'$' : '', true, false).draw();
+                    
+                    if (rawVal === 'Teacher') {
+                        yearFilter.hide();
+                    } else {
+                        yearFilter.show();
+                    }
+                });
+
+            // Add Year Filter (Create first so we can reference it)
+            var yearFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Years</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select>')
+                .on('change', function() {
+                    var val = $(this).val().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(11).search(val ? '^'+val+'$' : '', true, false).draw();
+                });
+
+            // Add Department Filter
+            var deptFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Departments</option><option value="MCA">MCA</option><option value="MBA">MBA</option><option value="AI&ML">AI&ML</option><option value="AI&DS">AI&DS</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="IT">IT</option></select>')
+                .appendTo('.dataTables_length')
+                .on('change', function() {
+                    var rawVal = $(this).val();
+                    var val = rawVal.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(10).search(val ? '^'+val+'$' : '', true, false).draw();
+                    
+                    // Update Year Filter options
+                    var selectedYear = yearFilter.val();
+                    yearFilter.empty().append('<option value="">All Years</option><option value="I">I</option><option value="II">II</option>');
+                    if (rawVal !== 'MCA' && rawVal !== 'MBA') {
+                        yearFilter.append('<option value="III">III</option><option value="IV">IV</option><option value="V">V</option>');
+                    }
+                    if (yearFilter.find('option[value="'+selectedYear+'"]').length > 0) {
+                        yearFilter.val(selectedYear);
+                    } else {
+                        yearFilter.val('');
+                        table.column(11).search('', true, false).draw();
+                    }
+                });
+
+            yearFilter.appendTo('.dataTables_length');
         });
     </script>
 </body>

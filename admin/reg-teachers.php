@@ -69,9 +69,38 @@ header('location:reg-teachers.php');
                 <h4 class="header-line">Manage Reg Teachers</h4>
     </div>
 
-
         </div>
             <div class="row">
+<?php if($_SESSION['error']!="")
+    {?>
+<div class="col-md-6">
+<div class="alert alert-danger" >
+ <strong>Error :</strong> 
+ <?php echo htmlentities($_SESSION['error']);?>
+<?php echo htmlentities($_SESSION['error']="");?>
+</div>
+</div>
+<?php } ?>
+<?php if($_SESSION['msg']!="")
+{?>
+<div class="col-md-6">
+<div class="alert alert-success" >
+ <strong>Success :</strong> 
+ <?php echo htmlentities($_SESSION['msg']);?>
+<?php echo htmlentities($_SESSION['msg']="");?>
+</div>
+</div>
+<?php } ?>
+<?php if($_SESSION['updatemsg']!="")
+{?>
+<div class="col-md-6">
+<div class="alert alert-success" >
+ <strong>Success :</strong> 
+ <?php echo htmlentities($_SESSION['updatemsg']);?>
+<?php echo htmlentities($_SESSION['updatemsg']="");?>
+</div>
+</div>
+<?php } ?>
                 <div class="col-md-12">
                     <!-- Advanced Tables -->
                     <div class="panel panel-default">
@@ -106,7 +135,10 @@ foreach($results as $result)
 {               ?>                                      
                                         <tr class="odd gradeX">
                                             <td class="center"><?php echo htmlentities($cnt);?></td>
-                                            <td class="center"><?php echo htmlentities($result->TeacherId);?></td>
+                                            <td class="center">
+                                                <strong><?php echo htmlentities($result->TeacherId);?></strong>
+                                                <br /><small class="text-muted"><i class="fa fa-phone"></i> <?php echo htmlentities($result->MobileNumber);?></small>
+                                            </td>
                                             <td class="center"><?php echo htmlentities($result->FullName);?>
                                             <br><span class="label label-info">Teacher</span>
                                             </td>
@@ -132,8 +164,9 @@ foreach($results as $result)
 <a href="reg-teachers.php?id=<?php echo htmlentities($result->id);?>" onclick="return confirm('Are you sure you want to active this teacher?');"><button class="btn btn-primary"> Active</button> 
                                             <?php } ?>
 
-<a href="teacher-history.php?stdid=<?php echo htmlentities($result->TeacherId);?>"><button class="btn btn-success"> Details</button> 
+<a href="teacher-history.php?stdid=<?php echo htmlentities($result->TeacherId);?>"><button class="btn btn-success"> Details</button></a>
 
+<a href="edit-teacher-profile.php?teaid=<?php echo htmlentities($result->TeacherId);?>"><button class="btn btn-primary"> Update Profile</button></a>
                                           
                                             </td>
                                         </tr>
@@ -166,6 +199,19 @@ foreach($results as $result)
     <script src="assets/js/dataTables/dataTables.bootstrap.js"></script>
       <!-- CUSTOM SCRIPTS  -->
     <script src="assets/js/custom.js"></script>
+    <script>
+        $(document).ready(function() {
+            var table = $('#dataTables-example').DataTable();
+            
+            // Add Department Filter
+            var deptFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Departments</option><option value="MCA">MCA</option><option value="MBA">MBA</option><option value="AI&ML">AI&ML</option><option value="AI&DS">AI&DS</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="IT">IT</option></select>')
+                .appendTo('.dataTables_length')
+                .on('change', function() {
+                    var val = $(this).val().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(5).search(val ? '^'+val+'$' : '', true, false).draw();
+                });
+        });
+    </script>
 </body>
 </html>
 <?php } ?>

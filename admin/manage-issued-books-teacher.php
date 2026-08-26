@@ -148,10 +148,11 @@ if($overdueCount > 0)
                                             <th>Return Date</th>
                                             <th>Days Overdue</th>
                                             <th>Action</th>
+                                            <th style="display:none;">Department</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-<?php $sql = "SELECT tblteachers.FullName,tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid from  tblissuedbookdetails join tblteachers on tblteachers.TeacherId=tblissuedbookdetails.StudentID join tblbooks on tblbooks.id=tblissuedbookdetails.BookId order by tblissuedbookdetails.id desc";
+<?php $sql = "SELECT tblteachers.FullName, tblteachers.Department, tblbooks.BookName,tblbooks.ISBNNumber,tblissuedbookdetails.IssuesDate,tblissuedbookdetails.ReturnDate,tblissuedbookdetails.id as rid from  tblissuedbookdetails join tblteachers on tblteachers.TeacherId=tblissuedbookdetails.StudentID join tblbooks on tblbooks.id=tblissuedbookdetails.BookId order by tblissuedbookdetails.id desc";
 $query = $dbh -> prepare($sql);
 $query->execute();
 $results=$query->fetchAll(PDO::FETCH_OBJ);
@@ -194,6 +195,7 @@ $isOverdue = ($daysSinceIssue >= 7 && $result->ReturnDate == "");
                                             <a href="update-issue-bookdetails-teacher.php?rid=<?php echo htmlentities($result->rid);?>"><button class="btn btn-primary"><i class="fa fa-edit "></i> Edit</button>
                                          
                                             </td>
+                                            <td style="display:none;"><?php echo htmlentities($result->Department);?></td>
                                         </tr>
  <?php $cnt=$cnt+1;}} ?>
                                 </table>
@@ -223,6 +225,19 @@ $isOverdue = ($daysSinceIssue >= 7 && $result->ReturnDate == "");
     <script src="assets/js/dataTables/dataTables.bootstrap.js"></script>
       <!-- CUSTOM SCRIPTS  -->
     <script src="assets/js/custom.js"></script>
+    <script>
+        $(document).ready(function() {
+            var table = $('#dataTables-example').DataTable();
+            
+            // Add Department Filter
+            var deptFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Departments</option><option value="MCA">MCA</option><option value="MBA">MBA</option><option value="AI&ML">AI&ML</option><option value="AI&DS">AI&DS</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="IT">IT</option></select>')
+                .appendTo('.dataTables_length')
+                .on('change', function() {
+                    var val = $(this).val().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(8).search(val ? '^'+val+'$' : '', true, false).draw();
+                });
+        });
+    </script>
 </body>
 </html>
 <?php } ?>

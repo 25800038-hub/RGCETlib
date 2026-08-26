@@ -109,7 +109,10 @@ foreach($results as $result)
 {               ?>                                      
                                         <tr class="odd gradeX">
                                             <td class="center"><?php echo htmlentities($cnt);?></td>
-                                            <td class="center"><?php echo htmlentities($result->StudentId);?></td>
+                                            <td class="center">
+                                                <strong><?php echo htmlentities($result->StudentId);?></strong>
+                                                <br /><small class="text-muted"><i class="fa fa-phone"></i> <?php echo htmlentities($result->MobileNumber);?></small>
+                                            </td>
                                             <td class="center"><?php echo htmlentities($result->FullName);?>
                                             <br><span class="label label-success">Student</span>
                                             </td>

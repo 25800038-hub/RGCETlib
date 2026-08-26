@@ -69,9 +69,38 @@ header('location:reg-students.php');
                 <h4 class="header-line">Manage Reg Students</h4>
     </div>
 
-
         </div>
             <div class="row">
+<?php if($_SESSION['error']!="")
+    {?>
+<div class="col-md-6">
+<div class="alert alert-danger" >
+ <strong>Error :</strong> 
+ <?php echo htmlentities($_SESSION['error']);?>
+<?php echo htmlentities($_SESSION['error']="");?>
+</div>
+</div>
+<?php } ?>
+<?php if($_SESSION['msg']!="")
+{?>
+<div class="col-md-6">
+<div class="alert alert-success" >
+ <strong>Success :</strong> 
+ <?php echo htmlentities($_SESSION['msg']);?>
+<?php echo htmlentities($_SESSION['msg']="");?>
+</div>
+</div>
+<?php } ?>
+<?php if($_SESSION['updatemsg']!="")
+{?>
+<div class="col-md-6">
+<div class="alert alert-success" >
+ <strong>Success :</strong> 
+ <?php echo htmlentities($_SESSION['updatemsg']);?>
+<?php echo htmlentities($_SESSION['updatemsg']="");?>
+</div>
+</div>
+<?php } ?>
                 <div class="col-md-12">
                     <!-- Advanced Tables -->
                     <div class="panel panel-default">
@@ -107,7 +136,10 @@ foreach($results as $result)
 {               ?>                                      
                                         <tr class="odd gradeX">
                                             <td class="center"><?php echo htmlentities($cnt);?></td>
-                                            <td class="center"><?php echo htmlentities($result->StudentId);?></td>
+                                            <td class="center">
+                                                <strong><?php echo htmlentities($result->StudentId);?></strong>
+                                                <br /><small class="text-muted"><i class="fa fa-phone"></i> <?php echo htmlentities($result->MobileNumber);?></small>
+                                            </td>
                                             <td class="center"><?php echo htmlentities($result->FullName);?>
                                             <br><span class="label label-success">Student</span>
                                             </td>
@@ -134,8 +166,9 @@ foreach($results as $result)
 <a href="reg-students.php?id=<?php echo htmlentities($result->id);?>" onclick="return confirm('Are you sure you want to active this student?');"><button class="btn btn-primary"> Active</button> 
                                             <?php } ?>
 
-<a href="student-history.php?stdid=<?php echo htmlentities($result->StudentId);?>"><button class="btn btn-success"> Details</button> 
+<a href="student-history.php?stdid=<?php echo htmlentities($result->StudentId);?>"><button class="btn btn-success"> Details</button></a>
 
+<a href="edit-student-profile.php?stdid=<?php echo htmlentities($result->StudentId);?>"><button class="btn btn-primary"> Update Profile</button></a>
                                           
                                             </td>
                                         </tr>
@@ -168,6 +201,42 @@ foreach($results as $result)
     <script src="assets/js/dataTables/dataTables.bootstrap.js"></script>
       <!-- CUSTOM SCRIPTS  -->
     <script src="assets/js/custom.js"></script>
+    <script>
+        $(document).ready(function() {
+            var table = $('#dataTables-example').DataTable();
+            
+            // Add Year Filter (Create first so we can reference it)
+            var yearFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Years</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select>')
+                .on('change', function() {
+                    var val = $(this).val().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(6).search(val ? '^'+val+'$' : '', true, false).draw();
+                });
+
+            // Add Department Filter
+            var deptFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Departments</option><option value="MCA">MCA</option><option value="MBA">MBA</option><option value="AI&ML">AI&ML</option><option value="AI&DS">AI&DS</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="IT">IT</option></select>')
+                .appendTo('.dataTables_length')
+                .on('change', function() {
+                    var rawVal = $(this).val();
+                    var val = rawVal.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    table.column(5).search(val ? '^'+val+'$' : '', true, false).draw();
+                    
+                    // Update Year Filter options
+                    var selectedYear = yearFilter.val();
+                    yearFilter.empty().append('<option value="">All Years</option><option value="I">I</option><option value="II">II</option>');
+                    if (rawVal !== 'MCA' && rawVal !== 'MBA') {
+                        yearFilter.append('<option value="III">III</option><option value="IV">IV</option><option value="V">V</option>');
+                    }
+                    if (yearFilter.find('option[value="'+selectedYear+'"]').length > 0) {
+                        yearFilter.val(selectedYear);
+                    } else {
+                        yearFilter.val('');
+                        table.column(6).search('', true, false).draw();
+                    }
+                });
+
+            yearFilter.appendTo('.dataTables_length');
+        });
+    </script>
 </body>
 </html>
 <?php } ?>

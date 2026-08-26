@@ -1,4 +1,4 @@
-﻿
+
 /*=============================================================
     Authour URI: www.binarytheme.com
     License: Commons Attribution 3.0
@@ -21,9 +21,9 @@
 
         },
         dataTable_fun: function () {
-
-            $('#dataTables-example').dataTable();
-
+            if ($.fn.dataTable) {
+                $('#dataTables-example').dataTable();
+            }
         },
        
         custom_fun:function()
