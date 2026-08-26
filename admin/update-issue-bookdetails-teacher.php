@@ -30,8 +30,47 @@ $query2->execute();
 include_once('../includes/promote_waitlist.php');
 promoteWaitlist($dbh, $bookid);
 
-$_SESSION['msg']="Book Returned successfully";
+try {
+    require_once __DIR__ . '/../services/MailService.php';
+    $mailService = new MailService($dbh);
+    
+    $issueQuery = $dbh->prepare("
+        SELECT t.FullName, t.EmailId, b.BookName 
+        FROM tblissuedbookdetails i
+        JOIN tblteachers t ON t.TeacherId = i.StudentID
+        JOIN tblbooks b ON b.id = i.BookId
+        WHERE i.id = :rid
+    ");
+    $issueQuery->execute([':rid' => $rid]);
+    $details = $issueQuery->fetch(PDO::FETCH_OBJ);
+    
+    if($details && !empty($details->EmailId)) {
+        $returnDate = date('Y-m-d');
+        $fineText = empty($fine) || $fine == 0 ? "None" : "₹" . $fine;
+        
+        $subject = "Book Returned Successfully - RGCET Library";
+        $htmlBody = "<p>Hello {$details->FullName},</p>
+                    <p>Your book has been successfully returned.</p>
+                    <p><strong>Book:</strong> {$details->BookName}<br>
+                    <strong>Return Date:</strong> {$returnDate}<br>
+                    <strong>Fine Paid:</strong> {$fineText}</p>
+                    <p>Thank you,<br>RGCET Library</p>";
+                    
+        if (!$mailService->sendEmail($details->EmailId, $subject, $htmlBody, $rid, 'Return')) {
+            $_SESSION['msg'] = "Book Returned successfully. Email notification could not be sent.";
+        } else {
+            $_SESSION['msg']="Book Returned successfully";
+        }
+    } else {
+        $_SESSION['msg']="Book Returned successfully";
+    }
+} catch (\Exception $e) {
+    error_log("Email return failed: " . $e->getMessage());
+    $_SESSION['msg'] = "Book Returned successfully. Email notification could not be sent.";
+}
+
 header('location:manage-issued-books-teacher.php');
+exit();
 
 
 

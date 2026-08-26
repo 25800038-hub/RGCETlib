@@ -32,6 +32,35 @@ $sid=isset($_SESSION['stdid']) ? $_SESSION['stdid'] : $_SESSION['teacherid'];
 
             $_SESSION['msg'] = "Reservation cancelled successfully.";
 
+            // Send Cancellation Email
+            try {
+                require_once __DIR__ . '/services/MailService.php';
+                $mailService = new MailService($dbh);
+                
+                // Fetch book details
+                $bookQuery = $dbh->prepare("SELECT BookName FROM tblbooks WHERE id=:bookid");
+                $bookQuery->execute([':bookid' => $resObj->BookId]);
+                $book = $bookQuery->fetch(PDO::FETCH_OBJ);
+                
+                // Fetch student details
+                $userQuery = $dbh->prepare("SELECT FullName, EmailId FROM tblstudents WHERE StudentId=:studentid");
+                $userQuery->execute([':studentid' => $sid]);
+                $user = $userQuery->fetch(PDO::FETCH_OBJ);
+                
+                if($book && $user && !empty($user->EmailId)) {
+                    $subject = "Reservation Cancelled - RGCET Library";
+                    $htmlBody = "<p>Hello {$user->FullName},</p>
+                                <p>Your reservation for the book has been successfully cancelled.</p>
+                                <p><strong>Book:</strong> {$book->BookName}</p>
+                                <p>If you cancelled this by mistake, please log in and reserve the book again.</p>
+                                <p>Thank you,<br>RGCET Library</p>";
+                                
+                    $mailService->sendEmail($user->EmailId, $subject, $htmlBody, $resid, 'Reservation');
+                }
+            } catch (\Exception $e) {
+                error_log("Email cancellation failed: " . $e->getMessage());
+            }
+
             // If a reserved book was cancelled, promote the next person on the waitlist
             if($resObj->Status == 'Reserved') {
                 include_once('includes/promote_waitlist.php');

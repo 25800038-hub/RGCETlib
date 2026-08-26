@@ -51,6 +51,40 @@ else
                 $updateQuery->bindParam(':resid', $resid, PDO::PARAM_INT);
                 $updateQuery->execute();
 
+                // Send Issue Email
+                try {
+                    require_once __DIR__ . '/../services/MailService.php';
+                    $mailService = new MailService($dbh);
+                    
+                    // Fetch book details
+                    $bookQuery = $dbh->prepare("SELECT BookName FROM tblbooks WHERE id=:bookid");
+                    $bookQuery->execute([':bookid' => $bid]);
+                    $book = $bookQuery->fetch(PDO::FETCH_OBJ);
+                    
+                    // Fetch student/teacher details
+                    $userQuery = $dbh->prepare("SELECT FullName, EmailId FROM tblstudents WHERE StudentId=:studentid UNION SELECT FullName, EmailId FROM tblteachers WHERE TeacherId=:studentid");
+                    $userQuery->execute([':studentid' => $sid]);
+                    $user = $userQuery->fetch(PDO::FETCH_OBJ);
+                    
+                    if($book && $user && !empty($user->EmailId)) {
+                        $issueDate = date('Y-m-d');
+                        $dueDate = date('Y-m-d', strtotime('+7 days'));
+                        
+                        $subject = "Book Issued Successfully - RGCET Library";
+                        $htmlBody = "<p>Hello {$user->FullName},</p>
+                                    <p>Your reserved book has been issued successfully.</p>
+                                    <p><strong>Book:</strong> {$book->BookName}<br>
+                                    <strong>Issue Date:</strong> {$issueDate}<br>
+                                    <strong>Due Date:</strong> {$dueDate}</p>
+                                    <p>Please return the book on or before the due date to avoid any applicable fine.</p>
+                                    <p>Thank you,<br>RGCET Library</p>";
+                                    
+                        $mailService->sendEmail($user->EmailId, $subject, $htmlBody, $lastInsertId, 'Issue');
+                    }
+                } catch (\Exception $e) {
+                    error_log("Email issue failed: " . $e->getMessage());
+                }
+
                 $_SESSION['msg'] = "Book successfully issued to " . $res->FullName . " (Reservation #" . $resid . " fulfilled)!";
             }
             else
@@ -84,6 +118,38 @@ else
         $cancelQuery->execute();
 
         $_SESSION['msg'] = "Reservation #" . $resid . " has been cancelled.";
+        
+        // Send Cancellation Email
+        try {
+            require_once __DIR__ . '/../services/MailService.php';
+            $mailService = new MailService($dbh);
+            
+            // Fetch reservation details including user
+            $resDetailsSql = "SELECT r.BookId, b.BookName, r.StudentID,
+                              COALESCE(s.FullName, t.FullName) as FullName,
+                              COALESCE(s.EmailId, t.EmailId) as EmailId
+                              FROM tblreservations r
+                              JOIN tblbooks b ON b.id = r.BookId
+                              LEFT JOIN tblstudents s ON s.StudentId = r.StudentID
+                              LEFT JOIN tblteachers t ON t.TeacherId = r.StudentID
+                              WHERE r.id = :resid";
+            $detQuery = $dbh->prepare($resDetailsSql);
+            $detQuery->execute([':resid' => $resid]);
+            $det = $detQuery->fetch(PDO::FETCH_OBJ);
+            
+            if($det && !empty($det->EmailId)) {
+                $subject = "Reservation Cancelled - RGCET Library";
+                $htmlBody = "<p>Hello {$det->FullName},</p>
+                            <p>Your reservation for the book has been cancelled by the Library Administrator.</p>
+                            <p><strong>Book:</strong> {$det->BookName}</p>
+                            <p>Please contact the library counter if you have any questions.</p>
+                            <p>Thank you,<br>RGCET Library</p>";
+                            
+                $mailService->sendEmail($det->EmailId, $subject, $htmlBody, $resid, 'Reservation');
+            }
+        } catch (\Exception $e) {
+            error_log("Email cancellation failed: " . $e->getMessage());
+        }
         
         if($resObj && $resObj->Status == 'Reserved') {
             include_once('../includes/promote_waitlist.php');

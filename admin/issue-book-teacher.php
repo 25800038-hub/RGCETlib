@@ -42,7 +42,46 @@ $query->execute();
 $lastInsertId = $dbh->lastInsertId();
 if($lastInsertId)
 {
-$_SESSION['msg']="Book issued successfully";
+    try {
+        require_once __DIR__ . '/../services/MailService.php';
+        $mailService = new MailService($dbh);
+        
+        // Fetch book details
+        $bookQuery = $dbh->prepare("SELECT BookName FROM tblbooks WHERE id=:bookid");
+        $bookQuery->execute([':bookid' => $bookid]);
+        $book = $bookQuery->fetch(PDO::FETCH_OBJ);
+        
+        // Fetch teacher details
+        $userQuery = $dbh->prepare("SELECT FullName, EmailId FROM tblteachers WHERE TeacherId=:teacherid");
+        $userQuery->execute([':teacherid' => $teacherid]);
+        $user = $userQuery->fetch(PDO::FETCH_OBJ);
+        
+        if($book && $user && !empty($user->EmailId)) {
+            $issueDate = date('Y-m-d');
+            $dueDate = date('Y-m-d', strtotime('+7 days'));
+            
+            $subject = "Book Issued Successfully - RGCET Library";
+            $htmlBody = "<p>Hello {$user->FullName},</p>
+                        <p>Your book has been issued successfully.</p>
+                        <p><strong>Book:</strong> {$book->BookName}<br>
+                        <strong>Issue Date:</strong> {$issueDate}<br>
+                        <strong>Due Date:</strong> {$dueDate}</p>
+                        <p>Please return the book on or before the due date to avoid any applicable fine.</p>
+                        <p>Thank you,<br>RGCET Library</p>";
+                        
+            if (!$mailService->sendEmail($user->EmailId, $subject, $htmlBody, $lastInsertId, 'Issue')) {
+                $_SESSION['msg'] = "Book issued successfully. Email notification could not be sent.";
+            } else {
+                $_SESSION['msg']="Book issued successfully";
+            }
+        } else {
+            $_SESSION['msg']="Book issued successfully";
+        }
+    } catch (\Exception $e) {
+        error_log("Email issue failed: " . $e->getMessage());
+        $_SESSION['msg'] = "Book issued successfully. Email notification could not be sent.";
+    }
+    
 header('location:manage-issued-books-teacher.php');
 }
 else 

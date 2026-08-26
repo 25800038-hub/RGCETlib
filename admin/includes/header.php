@@ -51,7 +51,19 @@
                 <div class="navbar-collapse collapse">
                     <ul id="menu-top" class="nav navbar-nav navbar-right">
                         <li><a href="dashboard.php"><i class="fa fa-th-large"></i> Dashboard</a></li>
-
+                        
+                        <?php 
+                        // Calculate failed notifications for badge
+                        $badgeHtml = "";
+                        try {
+                            $failQuery = $dbh->query("SELECT COUNT(*) as failCount FROM tblnotifications WHERE status='failed' AND is_read=0");
+                            $failResult = $failQuery->fetch(PDO::FETCH_OBJ);
+                            if($failResult && $failResult->failCount > 0) {
+                                $badgeHtml = "&nbsp;<span class='badge' style='background-color:#dc2626;'>" . $failResult->failCount . "</span>";
+                            }
+                        } catch(\Exception $e) {}
+                        ?>
+                        <li><a href="notifications.php"><i class="fa fa-bell"></i> Notifications<?php echo $badgeHtml; ?></a></li>
                         <li>
                             <a href="#" class="dropdown-toggle" id="ddlCategories" data-toggle="dropdown"><i class="fa fa-folder-open"></i> Categories <i class="fa fa-angle-down"></i></a>
                             <ul class="dropdown-menu" role="menu" aria-labelledby="ddlCategories">

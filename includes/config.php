@@ -32,6 +32,19 @@ try {
   UNIQUE KEY TeacherId (TeacherId)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;");
 
+  $dbh->exec("CREATE TABLE IF NOT EXISTS `tblnotifications` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `recipient_email` varchar(120) NOT NULL,
+  `subject` varchar(255) NOT NULL,
+  `status` varchar(50) NOT NULL,
+  `error_message` text DEFAULT NULL,
+  `related_id` int(11) DEFAULT NULL,
+  `notification_type` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+
+
   try {
     $dbh->query("SELECT bookPdf FROM tblbooks LIMIT 1");
   } catch (Exception $ex) {

@@ -87,6 +87,25 @@ else
                 $insertQuery->bindParam(':bookid', $bookid, PDO::PARAM_INT);
                 $insertQuery->bindParam(':sid', $sid, PDO::PARAM_STR);
                 $insertQuery->execute();
+                $resId = $dbh->lastInsertId();
+
+                try {
+                    require_once __DIR__ . '/services/MailService.php';
+                    $mailService = new MailService($dbh);
+                    $infoSql = "SELECT b.BookName, COALESCE(s.FullName, t.FullName) as FullName, COALESCE(s.EmailId, t.EmailId) as EmailId FROM tblbooks b LEFT JOIN tblstudents s ON s.StudentId = :sid LEFT JOIN tblteachers t ON t.TeacherId = :sid2 WHERE b.id = :bid";
+                    $infoQuery = $dbh->prepare($infoSql);
+                    $infoQuery->execute([':sid' => $sid, ':sid2' => $sid, ':bid' => $bookid]);
+                    $info = $infoQuery->fetch(PDO::FETCH_OBJ);
+
+                    if($info && !empty($info->EmailId)) {
+                        $subject = "Book Reserved - Action Required";
+                        $htmlBody = "<p>Hello {$info->FullName},</p>
+                                     <p>Your reservation for <strong>{$info->BookName}</strong> was successful.</p>
+                                     <p>A copy is currently available. <strong>Please collect it from the library counter within 3 days</strong>, otherwise your reservation will be cancelled.</p>
+                                     <p>Thank you,<br>RGCET Library</p>";
+                        $mailService->sendEmail($info->EmailId, $subject, $htmlBody, $resId, 'Reservation');
+                    }
+                } catch (\Exception $e) {}
 
                 $_SESSION['msg'] = "Book reserved successfully! Please collect it from the library counter within 3 days.";
                 header('location:my-reservations.php');
@@ -99,6 +118,25 @@ else
                 $insertQuery->bindParam(':bookid', $bookid, PDO::PARAM_INT);
                 $insertQuery->bindParam(':sid', $sid, PDO::PARAM_STR);
                 $insertQuery->execute();
+                $resId = $dbh->lastInsertId();
+
+                try {
+                    require_once __DIR__ . '/services/MailService.php';
+                    $mailService = new MailService($dbh);
+                    $infoSql = "SELECT b.BookName, COALESCE(s.FullName, t.FullName) as FullName, COALESCE(s.EmailId, t.EmailId) as EmailId FROM tblbooks b LEFT JOIN tblstudents s ON s.StudentId = :sid LEFT JOIN tblteachers t ON t.TeacherId = :sid2 WHERE b.id = :bid";
+                    $infoQuery = $dbh->prepare($infoSql);
+                    $infoQuery->execute([':sid' => $sid, ':sid2' => $sid, ':bid' => $bookid]);
+                    $info = $infoQuery->fetch(PDO::FETCH_OBJ);
+
+                    if($info && !empty($info->EmailId)) {
+                        $subject = "Added to Waitlist";
+                        $htmlBody = "<p>Hello {$info->FullName},</p>
+                                     <p>You have been successfully added to the waitlist for <strong>{$info->BookName}</strong>.</p>
+                                     <p>We will automatically notify you by email as soon as a copy becomes available.</p>
+                                     <p>Thank you,<br>RGCET Library</p>";
+                        $mailService->sendEmail($info->EmailId, $subject, $htmlBody, $resId, 'Waitlist');
+                    }
+                } catch (\Exception $e) {}
 
                 $_SESSION['msg'] = "You have been added to the waitlist. We will reserve it for you when a copy becomes available.";
                 header('location:my-reservations.php');

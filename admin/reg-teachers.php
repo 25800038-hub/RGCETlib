@@ -156,18 +156,19 @@ foreach($results as $result)
 }
                                             ?></td>
                                             <td class="center">
+                                                <div style="display:flex; gap:5px; flex-wrap:wrap; align-items:center; justify-content:center;">
 <?php if($result->Status==1)
  {?>
-<a href="reg-teachers.php?inid=<?php echo htmlentities($result->id);?>" onclick="return confirm('Are you sure you want to block this teacher?');" >  <button class="btn btn-danger"> Inactive</button>
+<a href="reg-teachers.php?inid=<?php echo htmlentities($result->id);?>" onclick="return confirm('Are you sure you want to block this teacher?');" >  <button class="btn btn-danger"> Inactive</button></a>
 <?php } else {?>
 
-<a href="reg-teachers.php?id=<?php echo htmlentities($result->id);?>" onclick="return confirm('Are you sure you want to active this teacher?');"><button class="btn btn-primary"> Active</button> 
+<a href="reg-teachers.php?id=<?php echo htmlentities($result->id);?>" onclick="return confirm('Are you sure you want to active this teacher?');"><button class="btn btn-primary"> Active</button></a> 
                                             <?php } ?>
 
 <a href="teacher-history.php?stdid=<?php echo htmlentities($result->TeacherId);?>"><button class="btn btn-success"> Details</button></a>
 
 <a href="edit-teacher-profile.php?teaid=<?php echo htmlentities($result->TeacherId);?>"><button class="btn btn-primary"> Update Profile</button></a>
-                                          
+                                                </div>
                                             </td>
                                         </tr>
  <?php $cnt=$cnt+1;}} ?>                                      
