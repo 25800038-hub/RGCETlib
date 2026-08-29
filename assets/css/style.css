@@ -65,6 +65,12 @@ body {
 /* =============================================================
    ENHANCED HEADER & BRANDING BAR
  ============================================================ */
+.sticky-header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
 .top-branding-bar {
     background-color: rgb(227, 222, 202);
     padding: 16px 0 14px;

@@ -104,10 +104,49 @@ header('location:reg-teachers.php');
                 <div class="col-md-12">
                     <!-- Advanced Tables -->
                     <div class="panel panel-default">
-                        <div class="panel-heading">
-                          Reg Teachers
+                        <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+                          <span>Reg Teachers</span>
+                          <button class="btn btn-default btn-sm" type="button" onclick="toggleFilterPanel()" title="Toggle Filters">
+                              <i class="fa fa-sliders"></i> Filter
+                          </button>
                         </div>
                         <div class="panel-body">
+                            <!-- Filter Panel -->
+                            <div class="row" id="filterPanel" style="display: none; margin-bottom: 25px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e3e3e3; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label style="font-weight: 600; color: #333;"><i class="fa fa-info-circle"></i> Status</label>
+                                        <select id="filterStatus" class="form-control" onchange="filterTeachers()">
+                                            <option value="">All Statuses</option>
+                                            <option value="Active">Active</option>
+                                            <option value="Blocked">Blocked</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label style="font-weight: 600; color: #333;"><i class="fa fa-building"></i> Department</label>
+                                        <select id="filterDept" class="form-control" onchange="filterTeachers()">
+                                            <option value="">All Departments</option>
+                                            <option value="MCA">MCA</option>
+                                            <option value="MBA">MBA</option>
+                                            <option value="AI&ML">AI&ML</option>
+                                            <option value="AI&DS">AI&DS</option>
+                                            <option value="CSE">CSE</option>
+                                            <option value="ECE">ECE</option>
+                                            <option value="IT">IT</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group" style="margin-top: 28px; text-align: right;">
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="resetFilters()">
+                                            <i class="fa fa-refresh"></i> Reset
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="table-responsive">
                                 <table class="table table-striped table-bordered table-hover" id="dataTables-example">
                                     <thead>
@@ -203,15 +242,41 @@ foreach($results as $result)
     <script>
         $(document).ready(function() {
             var table = $('#dataTables-example').DataTable();
-            
-            // Add Department Filter
-            var deptFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Departments</option><option value="MCA">MCA</option><option value="MBA">MBA</option><option value="AI&ML">AI&ML</option><option value="AI&DS">AI&DS</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="IT">IT</option></select>')
-                .appendTo('.dataTables_length')
-                .on('change', function() {
-                    var val = $(this).val().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    table.column(5).search(val ? '^'+val+'$' : '', true, false).draw();
-                });
         });
+
+        function toggleFilterPanel() {
+            var panel = document.getElementById('filterPanel');
+            if (panel.style.display === "none") {
+                panel.style.display = "block";
+            } else {
+                panel.style.display = "none";
+            }
+        }
+
+        $.fn.dataTable.ext.search.push(
+            function( settings, data, dataIndex ) {
+                var statusInput = $('#filterStatus').val();
+                var deptInput = $('#filterDept').val();
+
+                var rowStatus = data[7]; // Status is index 7
+                var rowDept = data[5]; // Department is index 5
+
+                var matchesStatus = (statusInput === "" || rowStatus === statusInput);
+                var matchesDept = (deptInput === "" || rowDept === deptInput);
+
+                return matchesStatus && matchesDept;
+            }
+        );
+
+        function filterTeachers() {
+            $('#dataTables-example').DataTable().draw();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterDept').value = '';
+            filterTeachers();
+        }
     </script>
 </body>
 </html>

@@ -59,10 +59,60 @@ header('location:manage-books.php');
                 <div class="col-md-12">
                     <!-- Advanced Tables -->
                     <div class="panel panel-default">
-                        <div class="panel-heading">
-                           Books Listing
+                        <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+                           <span>Books Listing</span>
+                           <button class="btn btn-default btn-sm" type="button" onclick="toggleFilterPanel()" title="Toggle Filters">
+                               <i class="fa fa-sliders"></i> Filter
+                           </button>
                         </div>
                         <div class="panel-body">
+                            <!-- Filter Panel -->
+                            <div class="row" id="filterPanel" style="display: none; margin-bottom: 25px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e3e3e3; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label style="font-weight: 600; color: #333;"><i class="fa fa-folder-open"></i> Category</label>
+                                        <select id="filterCategory" class="form-control" onchange="filterBooks()">
+                                            <option value="">All Categories</option>
+                                            <?php 
+                                            $catSql = "SELECT id, CategoryName FROM tblcategory";
+                                            $catQuery = $dbh->query($catSql);
+                                            $categories = $catQuery->fetchAll(PDO::FETCH_OBJ);
+                                            foreach($categories as $cat) {
+                                                echo '<option value="'.htmlentities(strtolower($cat->CategoryName)).'">'.htmlentities($cat->CategoryName).'</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label style="font-weight: 600; color: #333;"><i class="fa fa-user"></i> Author</label>
+                                        <select id="filterAuthor" class="form-control" onchange="filterBooks()">
+                                            <option value="">All Authors</option>
+                                            <?php 
+                                            $authSql = "SELECT id, AuthorName FROM tblauthors";
+                                            $authQuery = $dbh->query($authSql);
+                                            $authors = $authQuery->fetchAll(PDO::FETCH_OBJ);
+                                            foreach($authors as $auth) {
+                                                echo '<option value="'.htmlentities(strtolower($auth->AuthorName)).'">'.htmlentities($auth->AuthorName).'</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group" style="margin-top: 28px; display: flex; align-items: center; justify-content: space-between;">
+                                        <label style="font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #31708f; margin-bottom: 0;">
+                                            <input type="checkbox" id="filterEbook" onchange="filterBooks()" style="width: 18px; height: 18px; margin: 0;"> 
+                                            <span>Available as eBook (PDF)</span>
+                                        </label>
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="resetFilters()">
+                                            <i class="fa fa-refresh"></i> Reset
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="table-responsive">
                                 <table class="table table-striped table-bordered table-hover" id="dataTables-example">
                                     <thead>
@@ -142,6 +192,46 @@ foreach($results as $result)
     <script src="assets/js/dataTables/dataTables.bootstrap.js"></script>
       <!-- CUSTOM SCRIPTS  -->
     <script src="assets/js/custom.js"></script>
+    <script>
+        function toggleFilterPanel() {
+            var panel = document.getElementById('filterPanel');
+            if (panel.style.display === "none") {
+                panel.style.display = "block";
+            } else {
+                panel.style.display = "none";
+            }
+        }
+
+        // Custom filtering function which will search data in column four between two values
+        $.fn.dataTable.ext.search.push(
+            function( settings, data, dataIndex ) {
+                var catInput = $('#filterCategory').val().toLowerCase();
+                var authInput = $('#filterAuthor').val().toLowerCase();
+                var ebookCheck = $('#filterEbook').is(':checked');
+
+                var rowCat = data[2].toLowerCase(); // Category is index 2
+                var rowAuth = data[3].toLowerCase(); // Author is index 3
+                var rowEbook = data[6].toLowerCase(); // eBook is index 6
+
+                var matchesCat = (catInput === "" || rowCat === catInput);
+                var matchesAuth = (authInput === "" || rowAuth === authInput);
+                var matchesEbook = (!ebookCheck || rowEbook.indexOf("view pdf") !== -1);
+
+                return matchesCat && matchesAuth && matchesEbook;
+            }
+        );
+
+        function filterBooks() {
+            $('#dataTables-example').DataTable().draw();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterAuthor').value = '';
+            document.getElementById('filterEbook').checked = false;
+            filterBooks();
+        }
+    </script>
 </body>
 </html>
 <?php } ?>

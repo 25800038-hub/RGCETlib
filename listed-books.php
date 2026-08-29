@@ -282,16 +282,67 @@ else
 
             <!-- Search and Filter Bar -->
             <div class="row" style="margin-bottom: 20px;">
-                <div class="col-md-6 col-sm-8">
+                <div class="col-md-8 col-sm-8">
                     <div class="input-group">
                         <input type="text" id="bookSearchInput" onkeyup="filterBooks()" class="form-control input-lg" placeholder="Search by Book Name, Author, or ISBN..." />
-                        <span class="input-group-addon"><i class="fa fa-search"></i></span>
+                        <div class="input-group-btn">
+                            <button class="btn btn-default btn-lg" type="button" onclick="toggleFilterPanel()" title="Toggle Filters">
+                                <i class="fa fa-sliders"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-sm-4 text-right">
+                <div class="col-md-4 col-sm-4 text-right">
                     <a href="my-reservations.php" class="btn btn-info btn-lg">
                         <i class="fa fa-bookmark"></i> My Reservations
                     </a>
+                </div>
+            </div>
+
+            <!-- Filter Panel -->
+            <div class="row" id="filterPanel" style="display: none; margin-bottom: 25px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e3e3e3; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label style="font-weight: 600; color: #333;"><i class="fa fa-folder-open"></i> Category</label>
+                        <select id="filterCategory" class="form-control" onchange="filterBooks()">
+                            <option value="">All Categories</option>
+                            <?php 
+                            $catSql = "SELECT id, CategoryName FROM tblcategory";
+                            $catQuery = $dbh->query($catSql);
+                            $categories = $catQuery->fetchAll(PDO::FETCH_OBJ);
+                            foreach($categories as $cat) {
+                                echo '<option value="'.htmlentities(strtolower($cat->CategoryName)).'">'.htmlentities($cat->CategoryName).'</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label style="font-weight: 600; color: #333;"><i class="fa fa-user"></i> Author</label>
+                        <select id="filterAuthor" class="form-control" onchange="filterBooks()">
+                            <option value="">All Authors</option>
+                            <?php 
+                            $authSql = "SELECT id, AuthorName FROM tblauthors";
+                            $authQuery = $dbh->query($authSql);
+                            $authors = $authQuery->fetchAll(PDO::FETCH_OBJ);
+                            foreach($authors as $auth) {
+                                echo '<option value="'.htmlentities(strtolower($auth->AuthorName)).'">'.htmlentities($auth->AuthorName).'</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group" style="margin-top: 28px; display: flex; align-items: center; justify-content: space-between;">
+                        <label style="font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #31708f; margin-bottom: 0;">
+                            <input type="checkbox" id="filterEbook" onchange="filterBooks()" style="width: 18px; height: 18px; margin: 0;"> 
+                            <span>Available as eBook (PDF)</span>
+                        </label>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="resetFilters()">
+                            <i class="fa fa-refresh"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -334,7 +385,10 @@ else
                         $isIssuedToMe = (intval($result->userHasIssued) > 0);
                         $hasPdf = (!empty($result->bookPdf) && file_exists("admin/bookpdf/" . $result->bookPdf));
                 ?>  
-                <div class="col-md-4 col-sm-6 book-item">
+                <div class="col-md-4 col-sm-6 book-item" 
+                     data-category="<?php echo htmlentities(strtolower($result->CategoryName));?>" 
+                     data-author="<?php echo htmlentities(strtolower($result->AuthorName));?>" 
+                     data-ebook="<?php echo $hasPdf ? 'yes' : 'no'; ?>">
                     <div class="book-card">
                         <div>
                             <div class="book-img-container">
@@ -453,14 +507,43 @@ else
     <script src="assets/js/bootstrap.js"></script>
     <script src="assets/js/custom.js"></script>
     <script>
+        function toggleFilterPanel() {
+            var panel = document.getElementById('filterPanel');
+            if (panel.style.display === "none") {
+                panel.style.display = "block";
+            } else {
+                panel.style.display = "none";
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('bookSearchInput').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterAuthor').value = '';
+            document.getElementById('filterEbook').checked = false;
+            filterBooks();
+        }
+
         function filterBooks() {
-            var input = document.getElementById('bookSearchInput');
-            var filter = input.value.toLowerCase();
+            var searchInput = document.getElementById('bookSearchInput').value.toLowerCase();
+            var catInput = document.getElementById('filterCategory').value.toLowerCase();
+            var authInput = document.getElementById('filterAuthor').value.toLowerCase();
+            var ebookCheck = document.getElementById('filterEbook').checked;
+
             var items = document.getElementsByClassName('book-item');
 
             for (var i = 0; i < items.length; i++) {
                 var text = items[i].innerText.toLowerCase();
-                if (text.indexOf(filter) > -1) {
+                var itemCat = items[i].getAttribute('data-category');
+                var itemAuth = items[i].getAttribute('data-author');
+                var itemEbook = items[i].getAttribute('data-ebook');
+
+                var matchesSearch = text.indexOf(searchInput) > -1;
+                var matchesCat = (catInput === "" || itemCat === catInput);
+                var matchesAuth = (authInput === "" || itemAuth === authInput);
+                var matchesEbook = (!ebookCheck || itemEbook === 'yes');
+
+                if (matchesSearch && matchesCat && matchesAuth && matchesEbook) {
                     items[i].style.display = "";
                 } else {
                     items[i].style.display = "none";

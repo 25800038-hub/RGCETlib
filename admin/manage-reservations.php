@@ -220,10 +220,62 @@ else
                 <div class="col-md-12">
                     <!-- Advanced Tables -->
                     <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <i class="fa fa-bookmark"></i> All Book Reservations
+                        <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fa fa-bookmark"></i> All Book Reservations</span>
+                            <button class="btn btn-default btn-sm" type="button" onclick="toggleFilterPanel()" title="Toggle Filters">
+                                <i class="fa fa-sliders"></i> Filter
+                            </button>
                         </div>
                         <div class="panel-body">
+                            <!-- Filter Panel -->
+                            <div class="row" id="filterPanel" style="display: none; margin-bottom: 25px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e3e3e3; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label style="font-weight: 600; color: #333;"><i class="fa fa-users"></i> Member Type</label>
+                                        <select id="filterType" class="form-control" onchange="filterReservations()">
+                                            <option value="">All Members</option>
+                                            <option value="Student">Student</option>
+                                            <option value="Teacher">Teacher</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label style="font-weight: 600; color: #333;"><i class="fa fa-building"></i> Department</label>
+                                        <select id="filterDept" class="form-control" onchange="filterReservations()">
+                                            <option value="">All Departments</option>
+                                            <option value="MCA">MCA</option>
+                                            <option value="MBA">MBA</option>
+                                            <option value="AI&ML">AI&ML</option>
+                                            <option value="AI&DS">AI&DS</option>
+                                            <option value="CSE">CSE</option>
+                                            <option value="ECE">ECE</option>
+                                            <option value="IT">IT</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label style="font-weight: 600; color: #333;"><i class="fa fa-graduation-cap"></i> Year</label>
+                                        <select id="filterYear" class="form-control" onchange="filterReservations()">
+                                            <option value="">All Years</option>
+                                            <option value="I">I</option>
+                                            <option value="II">II</option>
+                                            <option value="III">III</option>
+                                            <option value="IV">IV</option>
+                                            <option value="V">V</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group" style="margin-top: 28px; text-align: right;">
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="resetFilters()">
+                                            <i class="fa fa-refresh"></i> Reset
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="table-responsive">
                                 <table class="table table-striped table-bordered table-hover" id="dataTables-example">
                                     <thead>
@@ -379,53 +431,67 @@ else
     <script>
         $(document).ready(function() {
             var table = $('#dataTables-example').DataTable();
-            
-            // Add Member Type Filter
-            var memberFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Members</option><option value="Student">Student</option><option value="Teacher">Teacher</option></select>')
-                .appendTo('.dataTables_length')
-                .on('change', function() {
-                    var rawVal = $(this).val();
-                    var val = rawVal.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    table.column(9).search(val ? '^'+val+'$' : '', true, false).draw();
-                    
-                    if (rawVal === 'Teacher') {
-                        yearFilter.hide();
-                    } else {
-                        yearFilter.show();
-                    }
-                });
-
-            // Add Year Filter (Create first so we can reference it)
-            var yearFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Years</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select>')
-                .on('change', function() {
-                    var val = $(this).val().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    table.column(11).search(val ? '^'+val+'$' : '', true, false).draw();
-                });
-
-            // Add Department Filter
-            var deptFilter = $('<select class="form-control input-sm" style="display:inline-block; width:auto; margin-left:10px;"><option value="">All Departments</option><option value="MCA">MCA</option><option value="MBA">MBA</option><option value="AI&ML">AI&ML</option><option value="AI&DS">AI&DS</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="IT">IT</option></select>')
-                .appendTo('.dataTables_length')
-                .on('change', function() {
-                    var rawVal = $(this).val();
-                    var val = rawVal.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    table.column(10).search(val ? '^'+val+'$' : '', true, false).draw();
-                    
-                    // Update Year Filter options
-                    var selectedYear = yearFilter.val();
-                    yearFilter.empty().append('<option value="">All Years</option><option value="I">I</option><option value="II">II</option>');
-                    if (rawVal !== 'MCA' && rawVal !== 'MBA') {
-                        yearFilter.append('<option value="III">III</option><option value="IV">IV</option><option value="V">V</option>');
-                    }
-                    if (yearFilter.find('option[value="'+selectedYear+'"]').length > 0) {
-                        yearFilter.val(selectedYear);
-                    } else {
-                        yearFilter.val('');
-                        table.column(11).search('', true, false).draw();
-                    }
-                });
-
-            yearFilter.appendTo('.dataTables_length');
         });
+
+        function toggleFilterPanel() {
+            var panel = document.getElementById('filterPanel');
+            if (panel.style.display === "none") {
+                panel.style.display = "block";
+            } else {
+                panel.style.display = "none";
+            }
+        }
+
+        $.fn.dataTable.ext.search.push(
+            function( settings, data, dataIndex ) {
+                var typeInput = $('#filterType').val();
+                var deptInput = $('#filterDept').val();
+                var yearInput = $('#filterYear').val();
+
+                var rowType = data[9]; // Member Type is index 9
+                var rowDept = data[10]; // Department is index 10
+                var rowYear = data[11]; // Year is index 11
+
+                var matchesType = (typeInput === "" || rowType === typeInput);
+                var matchesDept = (deptInput === "" || rowDept === deptInput);
+                var matchesYear = (yearInput === "" || rowYear === yearInput);
+
+                return matchesType && matchesDept && matchesYear;
+            }
+        );
+
+        function filterReservations() {
+            var type = $('#filterType').val();
+            var dept = $('#filterDept').val();
+            var yearSelect = $('#filterYear');
+            var selectedYear = yearSelect.val();
+            
+            if (type === 'Teacher') {
+                yearSelect.prop('disabled', true);
+                yearSelect.val('');
+            } else {
+                yearSelect.prop('disabled', false);
+                yearSelect.empty().append('<option value="">All Years</option><option value="I">I</option><option value="II">II</option>');
+                if (dept !== 'MCA' && dept !== 'MBA') {
+                    yearSelect.append('<option value="III">III</option><option value="IV">IV</option><option value="V">V</option>');
+                }
+                if (yearSelect.find('option[value="'+selectedYear+'"]').length > 0) {
+                    yearSelect.val(selectedYear);
+                } else {
+                    yearSelect.val('');
+                }
+            }
+            
+            $('#dataTables-example').DataTable().draw();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterDept').value = '';
+            document.getElementById('filterYear').value = '';
+            $('#filterYear').prop('disabled', false);
+            filterReservations();
+        }
     </script>
 </body>
 </html>
